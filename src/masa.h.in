@@ -98,7 +98,7 @@ namespace MASA
   /// \name Problem Definition Routines
   // -------------------------------------
 
-  template <typename Scalar> 
+  template <typename Scalar>
   int masa_test_default(Scalar input);
 
   /**
@@ -311,6 +311,9 @@ namespace MASA
   template <typename Scalar>
   Scalar masa_eval_source_nu   (Scalar,Scalar);
 
+  template <typename Scalar>
+  Scalar masa_eval_source_state   (Scalar,Scalar,int);
+
   // --------------------------------
   // manufactured analytical solution  -- 2D
   // --------------------------------
@@ -344,6 +347,9 @@ namespace MASA
 
   template <typename Scalar>
   Scalar masa_eval_exact_rho_C3  (Scalar,Scalar);
+
+  template <typename Scalar>
+  Scalar masa_eval_exact_state  (Scalar,Scalar,int);
 
   // --------------------------------
   // source term(s) -- 3D
@@ -1286,4 +1292,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-

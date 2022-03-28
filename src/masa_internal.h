@@ -178,6 +178,7 @@ namespace MASA
 
     virtual Scalar eval_exact_u_boundary(Scalar)            {std::cout << "MASA ERROR:: Analytical Solution (boundary) is unavailable or not properly loaded.\n"; return -1.33;};
 
+    virtual Scalar eval_exact_state  (Scalar,Scalar,int)    {std::cout << "MASA ERROR:: Analytical Solution (state) is unavailable or not properly loaded.\n"; return -1.33;};
   /*
    * -------------------------------------------------------------------------------------------
    *
@@ -252,6 +253,7 @@ namespace MASA
     virtual Scalar eval_q_rho_C (Scalar)    {std::cout << "MASA ERROR:: Source Term (N )    is unavailable or not properly loaded.\n"; return -1.33;};
     virtual Scalar eval_q_rho_C3(Scalar)    {std::cout << "MASA ERROR:: Source Term (N2)    is unavailable or not properly loaded.\n"; return -1.33;};
 
+    virtual Scalar eval_q_state (Scalar,Scalar,int)     {std::cout << "MASA ERROR:: Source Term (state)    is unavailable or not properly loaded.\n"; return -1.33;};
   /*
    * -------------------------------------------------------------------------------------------
    *
@@ -1130,7 +1132,7 @@ namespace MASA
     Scalar D2uDx2;
     Scalar D2uDy2;
     Scalar D2vDxy;
-    
+
     Scalar D2vDx2;
     Scalar D2vDy2;
     Scalar D2TDx2;
@@ -1642,15 +1644,35 @@ namespace MASA
     Scalar eval_exact_rho_C3(Scalar);
   };
 
+  // ------------------------------------------------------
+  // ------------------------- test - plasma ----------
+  // ------------------------------------------------------
+  template <typename Scalar>
+  class test_plasma_2d : public manufactured_solution<Scalar>
+  {
+    using manufactured_solution<Scalar>::pi;
+    using manufactured_solution<Scalar>::PI;
+
+    Scalar test_var;
+
+  public:
+    test_plasma_2d(); // constructor
+    int init_var();          // default problem values
+
+    Scalar eval_q_state (Scalar,Scalar,int);
+
+    Scalar eval_exact_state  (Scalar,Scalar,int);
+
+  };
 
 } // end MASA namespace
 
 
 // DO NOT EDIT THIS LINE OR ANY BELOW IT
 // automatically generated MMS classes:
-  
+
 // ------------------------------------------------------
-// --------------- burgers_equation 
+// --------------- burgers_equation
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -1702,7 +1724,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- euler_transient_2d 
+// --------------- euler_transient_2d
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -1758,7 +1780,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- euler_transient_3d 
+// --------------- euler_transient_3d
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -1833,7 +1855,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- axi_euler_transient 
+// --------------- axi_euler_transient
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -1889,7 +1911,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- axi_cns_transient 
+// --------------- axi_cns_transient
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -1951,7 +1973,7 @@ public:
 #ifdef HAVE_METAPHYSICL
 
 // ------------------------------------------------------
-// --------------- ad_cns_2d_crossterms 
+// --------------- ad_cns_2d_crossterms
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2002,7 +2024,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- ad_cns_3d_crossterms 
+// --------------- ad_cns_3d_crossterms
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2204,7 +2226,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- convdiff_steady_nosource_1d 
+// --------------- convdiff_steady_nosource_1d
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2229,7 +2251,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- navierstokes_3d_incompressible 
+// --------------- navierstokes_3d_incompressible
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2267,7 +2289,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- navierstokes_3d_incompressible_homogeneous 
+// --------------- navierstokes_3d_incompressible_homogeneous
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2303,7 +2325,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- navierstokes_3d_incompbouss_homogeneous 
+// --------------- navierstokes_3d_incompbouss_homogeneous
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2346,7 +2368,7 @@ public:
 
 
 // ------------------------------------------------------
-// --------------- navierstokes_3d_transient_sutherland 
+// --------------- navierstokes_3d_transient_sutherland
 // ------------------------------------------------------
 namespace MASA{
 template <typename Scalar>
@@ -2423,7 +2445,6 @@ public:
   Scalar eval_exact_v(Scalar,Scalar,Scalar,Scalar);
   Scalar eval_exact_w(Scalar,Scalar,Scalar,Scalar);
 };}
-
 
 #endif // HAVE_METAPHYSICL
 

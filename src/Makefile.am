@@ -22,6 +22,7 @@ cc_sources += navierstokes_3d_incompressible.cpp
 cc_sources += navierstokes_3d_incompressible_homogeneous.cpp
 cc_sources += navierstokes_3d_incompbouss_homogeneous.cpp
 cc_sources += navierstokes_3d_transient_sutherland.cpp
+cc_sources += plasma_2d.cpp
 # do not edit this line! --l33t--
 
 # License Information
@@ -45,7 +46,7 @@ libmasa_la_SOURCES      = $(cc_sources) $(h_sources)
 # (Installs standalone)
 #----------------------
 if FORT_ENABLED
-  CLEANFILES             += masa.mod 
+  CLEANFILES             += masa.mod
   lib_LTLIBRARIES        += libfmasa.la
   libfmasa_la_LDFLAGS     = $(all_libraries) -release $(GENERIC_RELEASE)
   libfmasa_la_CPPFLAGS    = $(masa_optional_INCLUDES)

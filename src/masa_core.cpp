@@ -25,7 +25,7 @@
 // $Author$
 // $Id$
 //
-// masa_core.cpp: this is the core set of routines -- the only functions that 
+// masa_core.cpp: this is the core set of routines -- the only functions that
 //                should be called by users -- all other files are internal
 //
 //--------------------------------------------------------------------------
@@ -93,8 +93,8 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   // Build a temporary vector of MMS objects, then sort them into our map by name
   anim.push_back(new masa_test_function<Scalar>());   // test function
   anim.push_back(new masa_uninit<Scalar>()); // another test function
-  
-  //  ** register solutions here - lets keep this alphabetical ** 
+
+  //  ** register solutions here - lets keep this alphabetical **
 
   // axisymmetric solutions
   anim.push_back(new axi_cns<Scalar>());
@@ -103,7 +103,7 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   // SMASA::
   anim.push_back(new cp_normal<Scalar>());
 
-  // euler 
+  // euler
   anim.push_back(new euler_1d<Scalar>());
   anim.push_back(new euler_2d<Scalar>());
   anim.push_back(new euler_3d<Scalar>());
@@ -152,6 +152,8 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   // sod shock tube
   anim.push_back(new sod_1d<Scalar>());
 
+  anim.push_back(new test_plasma_2d<Scalar>());
+
   // MetaPhysicL-based solutions
 #ifdef HAVE_METAPHYSICL
   anim.push_back(new ad_cns_2d_crossterms<Scalar>());
@@ -170,7 +172,6 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   anim.push_back(new burgers_equation<Scalar>());
   anim.push_back(new axi_euler_transient<Scalar>());
   anim.push_back(new axi_cns_transient<Scalar>());
-
 
   // --l33t-- DO NOT EDIT THIS LINE OR ANY BELOW IT
 
@@ -195,11 +196,11 @@ template <typename Scalar>
 void MasterMS<Scalar>::verify_pointer_sanity() const
 {
   if(_master_pointer == 0)
-    {    
+    {
       std::cout << "MASA FATAL ERROR:: No initialized Manufactured Solution!" << std::endl;
       std::cout << "Have you called masa_init?" << std::endl;
       masa_exit(1);
-    }  
+    }
 }
 
 //
@@ -215,7 +216,7 @@ void MASA::masa_exit(int ex)
   std::cout << "MASA:: ABORTING\n";
   exit(ex);
 #endif
-  
+
 }
 
 template <typename Scalar>
@@ -239,16 +240,16 @@ void MasterMS<Scalar>::select_mms(const std::string& my_name)
   // check that the class does exist
   typename std::map<std::string, manufactured_solution<Scalar> *>::iterator it=_master_map.find(my_name);
   if(it != _master_map.end()) // found a name
-    { 
+    {
       std::cout << "MASA :: selected " << my_name << std::endl;
-      _master_pointer=it->second; // set pointer to currently selected solution      
-    }      
-  else 
+      _master_pointer=it->second; // set pointer to currently selected solution
+    }
+  else
     {
       std::cout << "\nMASA FATAL ERROR:: No such manufactured solution (" << my_name << ") has been initialized.\n";
       this->list_mms();
       masa_exit(1);
-    } 
+    }
 }
 
 
@@ -271,7 +272,7 @@ int MASA::masa_test_default(Scalar input)
     {
       exit(1);
     }
-  
+
   exit(0);
 }
 
@@ -289,7 +290,7 @@ template <typename Scalar>
 int MASA::masa_init(std::string unique_name, std::string str)
 {
   masa_master<Scalar>().init_mms(unique_name, str);
-  
+
   return 0; // steady as she goes
 }
 
@@ -358,19 +359,19 @@ int MASA::masa_printid()
 {
   std::vector<manufactured_solution<Scalar>*> anim;
 
-  get_list_mms(anim); //construct list 
+  get_list_mms(anim); //construct list
 
   std::cout << std::endl;
   std::cout << "\nMASA :: Available Solutions:\n";
   std::cout << "*-------------------------------------*" ;
 
-  for (typename std::vector<manufactured_solution<Scalar>*>::const_iterator it = anim.begin(); it != anim.end(); ++it) 
+  for (typename std::vector<manufactured_solution<Scalar>*>::const_iterator it = anim.begin(); it != anim.end(); ++it)
     {
       std::string name;
       (*it)->return_name(&name); // get name
       std::cout << std::endl << name;
       delete *it;
-    } // done with for loop 
+    } // done with for loop
 
   std::cout << "\n*-------------------------------------*\n" ;
 
@@ -400,7 +401,7 @@ int MASA::masa_init_param()
 
 //
 // Function that returns value of parameter selected by string
-// 
+//
 
 template <typename Scalar>
 Scalar MASA::masa_get_param(std::string param)
@@ -410,7 +411,7 @@ Scalar MASA::masa_get_param(std::string param)
 
 //
 // Function that returns vector -- selected by string
-// 
+//
 
 template <typename Scalar>
 int MASA::masa_get_vec(std::string vector_name,std::vector<Scalar>& vector)
@@ -436,7 +437,7 @@ int MASA::masa_display_vec()
  *         1D functions
  *
  * -----------------------------------------------
- */ 
+ */
 
 
   // --------------------------------
@@ -444,7 +445,7 @@ int MASA::masa_display_vec()
   // --------------------------------
 
 template <typename Scalar>
-Scalar MASA::masa_eval_source_t(Scalar x) //x 
+Scalar MASA::masa_eval_source_t(Scalar x) //x
 {
   return masa_master<Scalar>().get_ms().eval_q_t(x);
 }
@@ -713,7 +714,7 @@ Scalar MASA::masa_eval_grad_rho(Scalar x)
  *         2D functions
  *
  * -----------------------------------------------
- */ 
+ */
 
   // --------------------------------
   // source terms
@@ -739,7 +740,7 @@ Scalar MASA::masa_eval_source_u(Scalar x,Scalar y)
 
 template <typename Scalar>
 Scalar MASA::masa_eval_source_v(Scalar x,Scalar y)
-{  
+{
   return masa_master<Scalar>().get_ms().eval_q_v(x,y);
 }
 
@@ -791,6 +792,11 @@ Scalar MASA::masa_eval_source_nu(Scalar x,Scalar y)
   return masa_master<Scalar>().get_ms().eval_q_nu(x,y);
 }
 
+template <typename Scalar>
+Scalar MASA::masa_eval_source_state(Scalar x,Scalar y,int eq)
+{
+  return masa_master<Scalar>().get_ms().eval_q_state(x,y,eq);
+}
 
   // --------------------------------
   // analytical terms
@@ -892,12 +898,18 @@ Scalar MASA::masa_eval_grad_rho(Scalar x,Scalar y,int i)
   return masa_master<Scalar>().get_ms().eval_g_rho(x,y,i);
 }
 
+template <typename Scalar>
+Scalar MASA::masa_eval_exact_state(Scalar x,Scalar y,int eq)
+{
+  return masa_master<Scalar>().get_ms().eval_exact_state(x,y,eq);
+}
+
 /* ------------------------------------------------
  *
  *         3D functions
  *
  * -----------------------------------------------
- */ 
+ */
 
   // --------------------------------
   // source terms
@@ -1194,7 +1206,7 @@ Scalar MASA::masa_eval_grad_rho(Scalar x,Scalar y,Scalar z,Scalar t,int i)
  *         utility functions
  *
  * -----------------------------------------------
- */ 
+ */
 
 
 template <typename Scalar>
@@ -1416,6 +1428,8 @@ int MASA::masa_get_numeric_version()
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,int); \
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,Scalar,int); \
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,Scalar,Scalar,int); \
+  template Scalar masa_eval_exact_state<Scalar>(Scalar,Scalar,int); \
+  template Scalar masa_eval_source_state<Scalar>(Scalar,Scalar,int); \
   template int masa_test_poly<Scalar>();                             \
   template int masa_printid<Scalar>(); \
   template int masa_display_param<Scalar>(); \
