@@ -1648,15 +1648,59 @@ namespace MASA
   // ------------------------- test - plasma ----------
   // ------------------------------------------------------
   template <typename Scalar>
-  class test_plasma_2d : public manufactured_solution<Scalar>
+  class periodic_argon_ternary_2d : public manufactured_solution<Scalar>
   {
     using manufactured_solution<Scalar>::pi;
     using manufactured_solution<Scalar>::PI;
 
-    Scalar test_var;
+    Scalar u0;
+    Scalar dux;
+    Scalar duy;
+
+    Scalar kux;
+    Scalar kuy;
+    Scalar offset_ux;
+    Scalar offset_uy;
+
+    Scalar v0;
+    Scalar dvx;
+    Scalar dvy;
+
+    Scalar kvx;
+    Scalar kvy;
+    Scalar offset_vx;
+    Scalar offset_vy;
+
+    Scalar n0;
+    Scalar X0;
+    Scalar dX;
+    Scalar T0;
+    Scalar dT;
+
+    Scalar mA;
+    Scalar mI;
+    Scalar mE;
+
+    Scalar CV_A;
+    Scalar CV_I;
+    Scalar CV_E;
+
+    Scalar formEnergy_I;
+
+    Scalar Lx;
+    Scalar Ly;
+    Scalar kx;
+    Scalar ky;
+    Scalar offset_x;
+    Scalar offset_y;
+
+    Scalar kTx;
+    Scalar kTy;
+    Scalar offset_Tx;
+    Scalar offset_Ty;
 
   public:
-    test_plasma_2d(); // constructor
+    periodic_argon_ternary_2d(); // constructor
     int init_var();          // default problem values
 
     Scalar eval_q_state (Scalar,Scalar,int);
