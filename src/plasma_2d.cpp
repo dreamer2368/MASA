@@ -34,6 +34,10 @@
 
 #include <masa_internal.h>
 
+#ifdef HAVE_METAPHYSICL
+
+#include <ad_masa.h>
+
 const unsigned int NDIM = 2;
 
 using namespace MASA;
@@ -80,9 +84,15 @@ MASA::periodic_argon_ternary_2d<Scalar>::periodic_argon_ternary_2d()
   this->register_var("mI", &mI);
   this->register_var("mE", &mE);
 
+  this->register_var("R", &R);
+
   this->register_var("CV_A", &CV_A);
   this->register_var("CV_I", &CV_I);
   this->register_var("CV_E", &CV_E);
+
+  this->register_var("CP_A", &CP_A);
+  this->register_var("CP_I", &CP_I);
+  this->register_var("CP_E", &CP_E);
 
   this->register_var("formEnergy_I", &formEnergy_I);
 
@@ -97,6 +107,19 @@ MASA::periodic_argon_ternary_2d<Scalar>::periodic_argon_ternary_2d()
   this->register_var("kTy", &kTy);
   this->register_var("offset_Tx", &offset_Tx);
   this->register_var("offset_Ty", &offset_Ty);
+
+  this->register_var("mu", &mu);
+  this->register_var("muB", &muB);
+  this->register_var("k_heat", &k_heat);
+  this->register_var("D_A", &D_A);
+  this->register_var("D_I", &D_I);
+  this->register_var("D_E", &D_E);
+
+  this->register_var("qe", &qe);
+  this->register_var("kB", &kB);
+
+  this->register_var("ZI", &ZI);
+  this->register_var("ZE", &ZE);
 
   // init defaults
   this->init_var();
@@ -137,9 +160,15 @@ int MASA::periodic_argon_ternary_2d<Scalar>::init_var()
   err += this->set_var("mI", 1.38);
   err += this->set_var("mE", 1.38);
 
+  err += this->set_var("R", 1.38);
+
   err += this->set_var("CV_A", 1.38);
   err += this->set_var("CV_I", 1.38);
   err += this->set_var("CV_E", 1.38);
+
+  err += this->set_var("CP_A", 1.38);
+  err += this->set_var("CP_I", 1.38);
+  err += this->set_var("CP_E", 1.38);
 
   err += this->set_var("formEnergy_I", 1.38);
 
@@ -155,19 +184,119 @@ int MASA::periodic_argon_ternary_2d<Scalar>::init_var()
   err += this->set_var("offset_Tx", 1.38);
   err += this->set_var("offset_Ty", 1.38);
 
+  err += this->set_var("mu", 1.38);
+  err += this->set_var("muB", 1.38);
+  err += this->set_var("k_heat", 1.38);
+  err += this->set_var("D_A", 1.38);
+  err += this->set_var("D_I", 1.38);
+  err += this->set_var("D_E", 1.38);
+
+  err += this->set_var("qe", 1.38);
+  err += this->set_var("kB", 1.38);
+
+  err += this->set_var("ZI", 1.38);
+  err += this->set_var("ZE", 1.38);
+
   return err;
 }
 
 
 template <typename Scalar>
-Scalar MASA::periodic_argon_ternary_2d<Scalar>::eval_q_state(Scalar x,Scalar y,int eq)
+Scalar MASA::periodic_argon_ternary_2d<Scalar>::eval_q_state(Scalar x1,Scalar y1,int eq)
 {
   using std::cos;
   using std::sin;
 
-  Scalar Q_u_t = y;
+  typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
+  typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
+  typedef SecondDerivType ADScalar;
 
-  return(Q_u_t);
+  const ADScalar x = ADScalar(x1,NumberVectorUnitVector<NDIM, 0, Scalar>::value());
+  const ADScalar y = ADScalar(y1,NumberVectorUnitVector<NDIM, 1, Scalar>::value());
+
+  // Treat velocity as a vector
+  NumberVector<NDIM, ADScalar> U;
+  U[0] = u0 + dux * sin(2.0 * pi * kux * (x / Lx - offset_ux))
+            + duy * sin(2.0 * pi * kuy * (y / Ly - offset_uy));
+  U[1] = v0 + dvx * sin(2.0 * pi * kvx * (x / Lx - offset_vx))
+            + dvy * sin(2.0 * pi * kvy * (y / Ly - offset_vy));
+  ADScalar ne = n0 * (X0 + dX * sin(2.0 * pi * kx * (x / Lx - offset_x)) * sin(2.0 * pi * ky * (y / Ly - offset_y)));
+  ADScalar T = T0 + dT * sin(2.0 * pi * kTx * (x / Lx - offset_Tx)) * sin(2.0 * pi * kTy * (y / Ly - offset_Ty));
+  ADScalar p = n0 * R * T;
+
+  ADScalar heatCapacity = (CV_I + CV_E) * ne + CV_A * (n0 - 2.0 * ne);
+
+  ADScalar rho = (mI + mE) * ne + mA * (n0 - 2.0 * ne);
+  NumberVector<NDIM, ADScalar> rhoU;
+  rhoU[0] = rho * U[0];
+  rhoU[1] = rho * U[1];
+
+  ADScalar rhoE = 0.5 * rho * (U.dot(U)) + heatCapacity * T + ne * formEnergy_I;
+
+  Scalar source_rho = raw_value(divergence(rhoU));
+
+  NumberVector<NDIM, ADScalar> gradYI = (ne / rho).derivatives();
+  NumberVector<NDIM, ADScalar> V_I2 = - D_I * gradYI / (ne / rho);
+  NumberVector<NDIM, ADScalar> V_E2 = - D_E * gradYI / (ne / rho);
+  ADScalar YA = 1.0 - (mI + mE) * ne / rho;
+  NumberVector<NDIM, ADScalar> gradYA = YA.derivatives();
+  NumberVector<NDIM, ADScalar> V_A2 = - D_A * gradYA / YA;
+
+  ADScalar mob_I = qe / kB * ZI / T * D_I;
+  ADScalar mob_E = qe / kB * ZE / T * D_E;
+  ADScalar mho = mob_I * ne * ZI + mob_E * ne * ZE;
+
+  NumberVector<NDIM, ADScalar> ambE = - (V_I2 * ZI + V_E2 * ZE) * ne / mho;
+  NumberVector<NDIM, ADScalar> V_I1 = V_I2 + mob_I * ambE;
+  NumberVector<NDIM, ADScalar> V_E1 = V_E2 + mob_E * ambE;
+
+  NumberVector<NDIM, ADScalar> Vc = mI * ne * V_I1 + mE * ne * V_E1 + mA * (n0 - 2.0 * ne) * V_A2;
+  NumberVector<NDIM, ADScalar> V_I = V_I1 - Vc;
+  NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
+  NumberVector<NDIM, ADScalar> V_A = V_A2 - Vc;
+
+  Scalar source_rhoYI = raw_value(divergence(mI * ne * (U + V_I)));
+
+  // The shear strain tensor
+  NumberVector<NDIM, typename ADScalar::derivatives_type> GradU = gradient(U);
+
+  // The identity tensor I
+  NumberVector<NDIM, NumberVector<NDIM, Scalar>> Identity = NumberVector<NDIM, Scalar>::identity();
+
+  // The shear stress tensor
+  NumberVector<NDIM, NumberVector<NDIM, ADScalar>> Tau = mu * (GradU + transpose(GradU))
+                                                         + (muB - 2./3. * mu)*divergence(U)*Identity;
+
+  NumberVector<NDIM, Scalar> source_rhoU = raw_value(divergence(rho*U.outerproduct(U) - Tau) + p.derivatives());
+
+  // Temperature flux
+  NumberVector<NDIM, ADScalar> q = - k_heat * T.derivatives()
+                                   + ne * (CP_I * T + formEnergy_I) * V_I
+                                   + ne * CP_E * T * V_E
+                                   + (n0 - 2.0 * ne) * CP_A * T * V_A;
+
+  Scalar source_rhoE = raw_value(divergence((rhoE + p) * U + q - Tau.dot(U)));
+
+  switch (eq) {
+    case 0: // rho
+      return source_rho;
+    break;
+    case 1: // rho * u
+      return source_rhoU[0];
+    break;
+    case 2: // rho * v
+      return source_rhoU[1];
+    break;
+    case 3: // rho * E
+      return source_rhoE;
+    break;
+    case 4: // rho * Y_I
+      return source_rhoYI;
+    break;
+    default:
+      return -1.0;
+    break;
+  }
 }
 
 /* ------------------------------------------------
@@ -223,3 +352,5 @@ Scalar MASA::periodic_argon_ternary_2d<Scalar>::eval_exact_state(Scalar x,Scalar
 // ----------------------------------------
 
 MASA_INSTANTIATE_ALL(MASA::periodic_argon_ternary_2d);
+
+#endif // HAVE_METAPHYSICL

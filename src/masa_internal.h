@@ -1681,9 +1681,15 @@ namespace MASA
     Scalar mI;
     Scalar mE;
 
+    Scalar R;
+
     Scalar CV_A;
     Scalar CV_I;
     Scalar CV_E;
+
+    Scalar CP_A;
+    Scalar CP_I;
+    Scalar CP_E;
 
     Scalar formEnergy_I;
 
@@ -1698,6 +1704,20 @@ namespace MASA
     Scalar kTy;
     Scalar offset_Tx;
     Scalar offset_Ty;
+
+    // transport property
+    Scalar mu;
+    Scalar muB;
+    Scalar k_heat;
+    Scalar D_A;
+    Scalar D_I;
+    Scalar D_E;
+
+    Scalar qe;
+    Scalar kB;
+
+    Scalar ZI;
+    Scalar ZE;
 
   public:
     periodic_argon_ternary_2d(); // constructor
