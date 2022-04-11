@@ -235,12 +235,15 @@ Scalar MASA::periodic_argon_ternary_2d<Scalar>::eval_q_state(Scalar x1,Scalar y1
 
   Scalar source_rho = raw_value(divergence(rhoU));
 
-  NumberVector<NDIM, ADScalar> gradYI = (ne / rho).derivatives();
-  NumberVector<NDIM, ADScalar> V_I2 = - D_I * gradYI / (ne / rho);
-  NumberVector<NDIM, ADScalar> V_E2 = - D_E * gradYI / (ne / rho);
   ADScalar YA = 1.0 - (mI + mE) * ne / rho;
+  ADScalar YI = mI * ne / rho;
+  ADScalar YE = mE * ne / rho;
   NumberVector<NDIM, ADScalar> gradYA = YA.derivatives();
+  NumberVector<NDIM, ADScalar> gradYI = YI.derivatives();
+  NumberVector<NDIM, ADScalar> gradYE = YE.derivatives();
   NumberVector<NDIM, ADScalar> V_A2 = - D_A * gradYA / YA;
+  NumberVector<NDIM, ADScalar> V_I2 = - D_I * gradYI / YI;
+  NumberVector<NDIM, ADScalar> V_E2 = - D_E * gradYE / YE;
 
   ADScalar mob_I = qe / kB * ZI / T * D_I;
   ADScalar mob_E = qe / kB * ZE / T * D_E;
@@ -294,6 +297,7 @@ Scalar MASA::periodic_argon_ternary_2d<Scalar>::eval_q_state(Scalar x1,Scalar y1
       return source_rhoYI;
     break;
     default:
+      // return 0.0;
       return -1.0;
     break;
   }
