@@ -77,21 +77,24 @@ MASA::periodic_ternary_2d<Scalar>::periodic_ternary_2d()
   this->register_var("n0", &n0);
 
   this->register_var("X0", &X0);
-  this->register_var("dX0", &dX0);
+  this->register_var("dX0x", &dX0x);
+  this->register_var("dX0y", &dX0y);
   this->register_var("kx0", &kx0);
   this->register_var("ky0", &ky0);
   this->register_var("offset_x0", &offset_x0);
   this->register_var("offset_y0", &offset_y0);
 
   this->register_var("X1", &X1);
-  this->register_var("dX1", &dX1);
+  this->register_var("dX1x", &dX1x);
+  this->register_var("dX1y", &dX1y);
   this->register_var("kx1", &kx1);
   this->register_var("ky1", &ky1);
   this->register_var("offset_x1", &offset_x1);
   this->register_var("offset_y1", &offset_y1);
 
   this->register_var("T0", &T0);
-  this->register_var("dT", &dT);
+  this->register_var("dTx", &dTx);
+  this->register_var("dTy", &dTy);
   this->register_var("kTx", &kTx);
   this->register_var("kTy", &kTy);
   this->register_var("offset_Tx", &offset_Tx);
@@ -161,21 +164,24 @@ int MASA::periodic_ternary_2d<Scalar>::init_var()
   err += this->set_var("n0", 1.38);
 
   err += this->set_var("X0", 1.38);
-  err += this->set_var("dX0", 1.38);
+  err += this->set_var("dX0x", 1.38);
+  err += this->set_var("dX0y", 1.38);
   err += this->set_var("kx0", 1.38);
   err += this->set_var("ky0", 1.38);
   err += this->set_var("offset_x0", 1.38);
   err += this->set_var("offset_y0", 1.38);
 
   err += this->set_var("X1", 1.38);
-  err += this->set_var("dX1", 1.38);
+  err += this->set_var("dX1x", 1.38);
+  err += this->set_var("dX1y", 1.38);
   err += this->set_var("kx1", 1.38);
   err += this->set_var("ky1", 1.38);
   err += this->set_var("offset_x1", 1.38);
   err += this->set_var("offset_y1", 1.38);
 
   err += this->set_var("T0", 1.38);
-  err += this->set_var("dT", 1.38);
+  err += this->set_var("dTx", 1.38);
+  err += this->set_var("dTy", 1.38);
   err += this->set_var("kTx", 1.38);
   err += this->set_var("kTy", 1.38);
   err += this->set_var("offset_Tx", 1.38);
@@ -367,8 +373,8 @@ inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_nI(inputScalar x, inpu
   using std::cos;
   using std::sin;
 
-  inputScalar exact_nI = n0 * (X0 + dX0 * cos(2.0 * pi * kx0 * (x / Lx - offset_x0))
-                                        * cos(2.0 * pi * ky0 * (y / Ly - offset_y0)));
+  inputScalar exact_nI = n0 * (X0 + dX0x * cos(2.0 * pi * kx0 * (x / Lx - offset_x0))
+                                  + dX0y * cos(2.0 * pi * ky0 * (y / Ly - offset_y0)));
 
   return exact_nI;
 }
@@ -378,8 +384,8 @@ inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_nE(inputScalar x, inpu
   using std::cos;
   using std::sin;
 
-  inputScalar exact_nE = n0 * (X1 + dX1 * cos(2.0 * pi * kx1 * (x / Lx - offset_x1))
-                                        * cos(2.0 * pi * ky1 * (y / Ly - offset_y1)));
+  inputScalar exact_nE = n0 * (X1 + dX1x * cos(2.0 * pi * kx1 * (x / Lx - offset_x1))
+                                  + dX1y * cos(2.0 * pi * ky1 * (y / Ly - offset_y1)));
 
   return exact_nE;
 }
@@ -389,7 +395,8 @@ inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_T(inputScalar x, input
   using std::cos;
   using std::sin;
 
-  inputScalar exact_T = T0 + dT * cos(2.0 * pi * kTx * (x / Lx - offset_Tx)) * cos(2.0 * pi * kTy * (y / Ly - offset_Ty));
+  inputScalar exact_T = T0 + dTx * cos(2.0 * pi * kTx * (x / Lx - offset_Tx))
+                           + dTy * cos(2.0 * pi * kTy * (y / Ly - offset_Ty));
 
   return exact_T;
 }

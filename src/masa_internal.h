@@ -1674,21 +1674,24 @@ namespace MASA
     Scalar n0;
 
     Scalar X0;
-    Scalar dX0;
+    Scalar dX0x;
+    Scalar dX0y;
     Scalar kx0;
     Scalar ky0;
     Scalar offset_x0;
     Scalar offset_y0;
 
     Scalar X1;
-    Scalar dX1;
+    Scalar dX1x;
+    Scalar dX1y;
     Scalar kx1;
     Scalar ky1;
     Scalar offset_x1;
     Scalar offset_y1;
 
     Scalar T0;
-    Scalar dT;
+    Scalar dTx;
+    Scalar dTy;
     Scalar kTx;
     Scalar kTy;
     Scalar offset_Tx;
