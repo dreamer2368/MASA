@@ -1648,7 +1648,108 @@ namespace MASA
   // ------------------------- test - plasma ----------
   // ------------------------------------------------------
   template <typename Scalar>
-  class periodic_argon_ternary_2d : public manufactured_solution<Scalar>
+  class periodic_ternary_2d : public manufactured_solution<Scalar>
+  {
+    using manufactured_solution<Scalar>::pi;
+    using manufactured_solution<Scalar>::PI;
+
+    Scalar u0;
+    Scalar dux;
+    Scalar duy;
+
+    Scalar kux;
+    Scalar kuy;
+    Scalar offset_ux;
+    Scalar offset_uy;
+
+    Scalar v0;
+    Scalar dvx;
+    Scalar dvy;
+
+    Scalar kvx;
+    Scalar kvy;
+    Scalar offset_vx;
+    Scalar offset_vy;
+
+    Scalar n0;
+
+    Scalar X0;
+    Scalar dX0;
+    Scalar kx0;
+    Scalar ky0;
+    Scalar offset_x0;
+    Scalar offset_y0;
+
+    Scalar X1;
+    Scalar dX1;
+    Scalar kx1;
+    Scalar ky1;
+    Scalar offset_x1;
+    Scalar offset_y1;
+
+    Scalar T0;
+    Scalar dT;
+    Scalar kTx;
+    Scalar kTy;
+    Scalar offset_Tx;
+    Scalar offset_Ty;
+
+    Scalar mA;
+    Scalar mI;
+    Scalar mE;
+
+    Scalar R;
+
+    Scalar CV_A;
+    Scalar CV_I;
+    Scalar CV_E;
+
+    Scalar CP_A;
+    Scalar CP_I;
+    Scalar CP_E;
+
+    Scalar formEnergy_I;
+
+    Scalar Lx;
+    Scalar Ly;
+
+    // transport property
+    Scalar mu;
+    Scalar muB;
+    Scalar k_heat;
+    Scalar D_A;
+    Scalar D_I;
+    Scalar D_E;
+
+    Scalar qe;
+    Scalar kB;
+
+    Scalar ZI;
+    Scalar ZE;
+
+    template<typename inputScalar>
+    inputScalar eval_exact_u (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_v (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_nI (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_nE (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_T (inputScalar, inputScalar);
+
+  public:
+    periodic_ternary_2d(); // constructor
+    int init_var();          // default problem values
+
+    Scalar eval_q_state (Scalar,Scalar,int);
+
+    Scalar eval_exact_state  (Scalar,Scalar,int);
+
+  };
+
+  template <typename Scalar>
+  class periodic_ambipolar_ternary_2d : public manufactured_solution<Scalar>
   {
     using manufactured_solution<Scalar>::pi;
     using manufactured_solution<Scalar>::PI;
@@ -1720,7 +1821,7 @@ namespace MASA
     Scalar ZE;
 
   public:
-    periodic_argon_ternary_2d(); // constructor
+    periodic_ambipolar_ternary_2d(); // constructor
     int init_var();          // default problem values
 
     Scalar eval_q_state (Scalar,Scalar,int);
