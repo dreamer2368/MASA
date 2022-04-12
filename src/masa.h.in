@@ -312,7 +312,7 @@ namespace MASA
   Scalar masa_eval_source_nu   (Scalar,Scalar);
 
   template <typename Scalar>
-  Scalar masa_eval_source_state   (Scalar,Scalar,int);
+  void masa_eval_source_state   (Scalar,Scalar,std::vector<Scalar>&);
 
   // --------------------------------
   // manufactured analytical solution  -- 2D
@@ -349,7 +349,7 @@ namespace MASA
   Scalar masa_eval_exact_rho_C3  (Scalar,Scalar);
 
   template <typename Scalar>
-  Scalar masa_eval_exact_state  (Scalar,Scalar,int);
+  void masa_eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
 
   // --------------------------------
   // source term(s) -- 3D

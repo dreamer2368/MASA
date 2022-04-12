@@ -153,7 +153,7 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   anim.push_back(new sod_1d<Scalar>());
 
   anim.push_back(new periodic_ternary_2d<Scalar>());
-  anim.push_back(new periodic_ambipolar_ternary_2d<Scalar>());
+  // anim.push_back(new periodic_ambipolar_ternary_2d<Scalar>());
 
   // MetaPhysicL-based solutions
 #ifdef HAVE_METAPHYSICL
@@ -794,9 +794,10 @@ Scalar MASA::masa_eval_source_nu(Scalar x,Scalar y)
 }
 
 template <typename Scalar>
-Scalar MASA::masa_eval_source_state(Scalar x,Scalar y,int eq)
+void MASA::masa_eval_source_state(Scalar x,Scalar y,std::vector<Scalar> &q)
 {
-  return masa_master<Scalar>().get_ms().eval_q_state(x,y,eq);
+  masa_master<Scalar>().get_ms().eval_q_state(x,y,q);
+  return;
 }
 
   // --------------------------------
@@ -900,9 +901,10 @@ Scalar MASA::masa_eval_grad_rho(Scalar x,Scalar y,int i)
 }
 
 template <typename Scalar>
-Scalar MASA::masa_eval_exact_state(Scalar x,Scalar y,int eq)
+void MASA::masa_eval_exact_state(Scalar x,Scalar y,std::vector<Scalar> &state)
 {
-  return masa_master<Scalar>().get_ms().eval_exact_state(x,y,eq);
+  masa_master<Scalar>().get_ms().eval_exact_state(x,y,state);
+  return;
 }
 
 /* ------------------------------------------------
@@ -1429,8 +1431,8 @@ int MASA::masa_get_numeric_version()
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,int); \
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,Scalar,int); \
   template Scalar masa_eval_grad_rho<Scalar>(Scalar,Scalar,Scalar,Scalar,int); \
-  template Scalar masa_eval_exact_state<Scalar>(Scalar,Scalar,int); \
-  template Scalar masa_eval_source_state<Scalar>(Scalar,Scalar,int); \
+  template void masa_eval_exact_state<Scalar>(Scalar,Scalar,std::vector<Scalar>&); \
+  template void masa_eval_source_state<Scalar>(Scalar,Scalar,std::vector<Scalar>&); \
   template int masa_test_poly<Scalar>();                             \
   template int masa_printid<Scalar>(); \
   template int masa_display_param<Scalar>(); \

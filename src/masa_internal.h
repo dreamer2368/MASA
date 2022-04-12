@@ -178,7 +178,7 @@ namespace MASA
 
     virtual Scalar eval_exact_u_boundary(Scalar)            {std::cout << "MASA ERROR:: Analytical Solution (boundary) is unavailable or not properly loaded.\n"; return -1.33;};
 
-    virtual Scalar eval_exact_state  (Scalar,Scalar,int)    {std::cout << "MASA ERROR:: Analytical Solution (state) is unavailable or not properly loaded.\n"; return -1.33;};
+    virtual void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&)    {std::cout << "MASA ERROR:: Analytical Solution (state) is unavailable or not properly loaded.\n"; return;};
   /*
    * -------------------------------------------------------------------------------------------
    *
@@ -253,7 +253,7 @@ namespace MASA
     virtual Scalar eval_q_rho_C (Scalar)    {std::cout << "MASA ERROR:: Source Term (N )    is unavailable or not properly loaded.\n"; return -1.33;};
     virtual Scalar eval_q_rho_C3(Scalar)    {std::cout << "MASA ERROR:: Source Term (N2)    is unavailable or not properly loaded.\n"; return -1.33;};
 
-    virtual Scalar eval_q_state (Scalar,Scalar,int)     {std::cout << "MASA ERROR:: Source Term (state)    is unavailable or not properly loaded.\n"; return -1.33;};
+    virtual void eval_q_state (Scalar,Scalar,std::vector<Scalar>&)     {std::cout << "MASA ERROR:: Source Term (state)    is unavailable or not properly loaded.\n"; return;};
   /*
    * -------------------------------------------------------------------------------------------
    *
@@ -1742,93 +1742,93 @@ namespace MASA
     periodic_ternary_2d(); // constructor
     int init_var();          // default problem values
 
-    Scalar eval_q_state (Scalar,Scalar,int);
+    void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
 
-    Scalar eval_exact_state  (Scalar,Scalar,int);
-
-  };
-
-  template <typename Scalar>
-  class periodic_ambipolar_ternary_2d : public manufactured_solution<Scalar>
-  {
-    using manufactured_solution<Scalar>::pi;
-    using manufactured_solution<Scalar>::PI;
-
-    Scalar u0;
-    Scalar dux;
-    Scalar duy;
-
-    Scalar kux;
-    Scalar kuy;
-    Scalar offset_ux;
-    Scalar offset_uy;
-
-    Scalar v0;
-    Scalar dvx;
-    Scalar dvy;
-
-    Scalar kvx;
-    Scalar kvy;
-    Scalar offset_vx;
-    Scalar offset_vy;
-
-    Scalar n0;
-    Scalar X0;
-    Scalar dX;
-    Scalar T0;
-    Scalar dT;
-
-    Scalar mA;
-    Scalar mI;
-    Scalar mE;
-
-    Scalar R;
-
-    Scalar CV_A;
-    Scalar CV_I;
-    Scalar CV_E;
-
-    Scalar CP_A;
-    Scalar CP_I;
-    Scalar CP_E;
-
-    Scalar formEnergy_I;
-
-    Scalar Lx;
-    Scalar Ly;
-    Scalar kx;
-    Scalar ky;
-    Scalar offset_x;
-    Scalar offset_y;
-
-    Scalar kTx;
-    Scalar kTy;
-    Scalar offset_Tx;
-    Scalar offset_Ty;
-
-    // transport property
-    Scalar mu;
-    Scalar muB;
-    Scalar k_heat;
-    Scalar D_A;
-    Scalar D_I;
-    Scalar D_E;
-
-    Scalar qe;
-    Scalar kB;
-
-    Scalar ZI;
-    Scalar ZE;
-
-  public:
-    periodic_ambipolar_ternary_2d(); // constructor
-    int init_var();          // default problem values
-
-    Scalar eval_q_state (Scalar,Scalar,int);
-
-    Scalar eval_exact_state  (Scalar,Scalar,int);
+    void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
 
   };
+
+  // template <typename Scalar>
+  // class periodic_ambipolar_ternary_2d : public manufactured_solution<Scalar>
+  // {
+  //   using manufactured_solution<Scalar>::pi;
+  //   using manufactured_solution<Scalar>::PI;
+  //
+  //   Scalar u0;
+  //   Scalar dux;
+  //   Scalar duy;
+  //
+  //   Scalar kux;
+  //   Scalar kuy;
+  //   Scalar offset_ux;
+  //   Scalar offset_uy;
+  //
+  //   Scalar v0;
+  //   Scalar dvx;
+  //   Scalar dvy;
+  //
+  //   Scalar kvx;
+  //   Scalar kvy;
+  //   Scalar offset_vx;
+  //   Scalar offset_vy;
+  //
+  //   Scalar n0;
+  //   Scalar X0;
+  //   Scalar dX;
+  //   Scalar T0;
+  //   Scalar dT;
+  //
+  //   Scalar mA;
+  //   Scalar mI;
+  //   Scalar mE;
+  //
+  //   Scalar R;
+  //
+  //   Scalar CV_A;
+  //   Scalar CV_I;
+  //   Scalar CV_E;
+  //
+  //   Scalar CP_A;
+  //   Scalar CP_I;
+  //   Scalar CP_E;
+  //
+  //   Scalar formEnergy_I;
+  //
+  //   Scalar Lx;
+  //   Scalar Ly;
+  //   Scalar kx;
+  //   Scalar ky;
+  //   Scalar offset_x;
+  //   Scalar offset_y;
+  //
+  //   Scalar kTx;
+  //   Scalar kTy;
+  //   Scalar offset_Tx;
+  //   Scalar offset_Ty;
+  //
+  //   // transport property
+  //   Scalar mu;
+  //   Scalar muB;
+  //   Scalar k_heat;
+  //   Scalar D_A;
+  //   Scalar D_I;
+  //   Scalar D_E;
+  //
+  //   Scalar qe;
+  //   Scalar kB;
+  //
+  //   Scalar ZI;
+  //   Scalar ZE;
+  //
+  // public:
+  //   periodic_ambipolar_ternary_2d(); // constructor
+  //   int init_var();          // default problem values
+  //
+  //   std::vector<Scalar> eval_q_state (Scalar,Scalar);
+  //
+  //   Scalar eval_exact_state  (Scalar,Scalar,int);
+  //
+  // };
 
 } // end MASA namespace
 
