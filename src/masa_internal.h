@@ -1648,8 +1648,9 @@ namespace MASA
   // ------------------------- test - plasma ----------
   // ------------------------------------------------------
   template <typename Scalar>
-  class periodic_ternary_2d : public manufactured_solution<Scalar>
+  class ternary_2d_periodic : public manufactured_solution<Scalar>
   {
+  public:
     using manufactured_solution<Scalar>::pi;
     using manufactured_solution<Scalar>::PI;
 
@@ -1750,7 +1751,7 @@ namespace MASA
     inputScalar eval_exact_T (inputScalar, inputScalar);
 
   public:
-    periodic_ternary_2d(); // constructor
+    ternary_2d_periodic(); // constructor
     int init_var();          // default problem values
 
     void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
@@ -1759,8 +1760,19 @@ namespace MASA
 
   };
 
+  template <typename Scalar>
+  class ternary_2d_periodic_ambipolar : public ternary_2d_periodic<Scalar>
+  {
+  public:
+    ternary_2d_periodic_ambipolar();
+    // int init_var();
+
+    void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
+
+    void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
+  };
   // template <typename Scalar>
-  // class periodic_ambipolar_ternary_2d : public manufactured_solution<Scalar>
+  // class ternary_2d_periodic_ambipolar : public manufactured_solution<Scalar>
   // {
   //   using manufactured_solution<Scalar>::pi;
   //   using manufactured_solution<Scalar>::PI;
@@ -1832,7 +1844,7 @@ namespace MASA
   //   Scalar ZE;
   //
   // public:
-  //   periodic_ambipolar_ternary_2d(); // constructor
+  //   ternary_2d_periodic_ambipolar(); // constructor
   //   int init_var();          // default problem values
   //
   //   std::vector<Scalar> eval_q_state (Scalar,Scalar);
