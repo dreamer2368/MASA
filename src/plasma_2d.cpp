@@ -74,19 +74,25 @@ MASA::periodic_ternary_2d<Scalar>::periodic_ternary_2d()
   this->register_var("offset_vx", &offset_vx);
   this->register_var("offset_vy", &offset_vy);
 
-  this->register_var("n0", &n0);
+  this->register_var("rho0", &rho0);
+  this->register_var("drhox", &drhox);
+  this->register_var("drhoy", &drhoy);
+  this->register_var("krhox", &krhox);
+  this->register_var("krhoy", &krhoy);
+  this->register_var("offset_rhox", &offset_rhox);
+  this->register_var("offset_rhoy", &offset_rhoy);
 
-  this->register_var("X0", &X0);
-  this->register_var("dX0x", &dX0x);
-  this->register_var("dX0y", &dX0y);
+  this->register_var("Y0", &Y0);
+  this->register_var("dY0x", &dY0x);
+  this->register_var("dY0y", &dY0y);
   this->register_var("kx0", &kx0);
   this->register_var("ky0", &ky0);
   this->register_var("offset_x0", &offset_x0);
   this->register_var("offset_y0", &offset_y0);
 
-  this->register_var("X1", &X1);
-  this->register_var("dX1x", &dX1x);
-  this->register_var("dX1y", &dX1y);
+  this->register_var("Y1", &Y1);
+  this->register_var("dY1x", &dY1x);
+  this->register_var("dY1y", &dY1y);
   this->register_var("kx1", &kx1);
   this->register_var("ky1", &ky1);
   this->register_var("offset_x1", &offset_x1);
@@ -161,19 +167,25 @@ int MASA::periodic_ternary_2d<Scalar>::init_var()
   err += this->set_var("offset_vx", 1.38);
   err += this->set_var("offset_vy", 1.38);
 
-  err += this->set_var("n0", 1.38);
+  err += this->set_var("rho0", 1.38);
+  err += this->set_var("drhox", 1.38);
+  err += this->set_var("drhoy", 1.38);
+  err += this->set_var("krhox", 1.38);
+  err += this->set_var("krhoy", 1.38);
+  err += this->set_var("offset_rhox", 1.38);
+  err += this->set_var("offset_rhoy", 1.38);
 
-  err += this->set_var("X0", 1.38);
-  err += this->set_var("dX0x", 1.38);
-  err += this->set_var("dX0y", 1.38);
+  err += this->set_var("Y0", 1.38);
+  err += this->set_var("dY0x", 1.38);
+  err += this->set_var("dY0y", 1.38);
   err += this->set_var("kx0", 1.38);
   err += this->set_var("ky0", 1.38);
   err += this->set_var("offset_x0", 1.38);
   err += this->set_var("offset_y0", 1.38);
 
-  err += this->set_var("X1", 1.38);
-  err += this->set_var("dX1x", 1.38);
-  err += this->set_var("dX1y", 1.38);
+  err += this->set_var("Y1", 1.38);
+  err += this->set_var("dY1x", 1.38);
+  err += this->set_var("dY1y", 1.38);
   err += this->set_var("kx1", 1.38);
   err += this->set_var("ky1", 1.38);
   err += this->set_var("offset_x1", 1.38);
@@ -243,32 +255,36 @@ void MASA::periodic_ternary_2d<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::ve
   U[0] = eval_exact_u(x, y);
   U[1] = eval_exact_v(x, y);
 
-  ADScalar nE = eval_exact_nE(x, y);
-  ADScalar nI = eval_exact_nI(x, y);
-  ADScalar nA = n0 - nI - nE;
+  ADScalar rho = eval_exact_rho(x, y);
+  ADScalar YE = eval_exact_YE(x, y);
+  ADScalar YI = eval_exact_YI(x, y);
   ADScalar T = eval_exact_T(x, y);
-  ADScalar p = n0 * R * T;
 
+  ADScalar YA = 1.0 - YE - YI;
+  ADScalar nA = rho * YA / mA;
+  ADScalar nI = rho * YI / mI;
+  ADScalar nE = rho * YE / mE;
+  ADScalar nTotal = nA + nI + nE;
+  ADScalar XI = nI / nTotal;
+  ADScalar XE = nE / nTotal;
+  ADScalar XA = nA / nTotal;
+
+  ADScalar p = nTotal * R * T;
   ADScalar heatCapacity = CV_I * nI + CV_E * nE + CV_A * nA;
+  ADScalar rhoE = 0.5 * rho * (U.dot(U)) + heatCapacity * T + nI * formEnergy_I;
 
-  ADScalar rho = mI * nI + mE * nE + mA * nA;
   NumberVector<NDIM, ADScalar> rhoU;
   rhoU[0] = rho * U[0];
   rhoU[1] = rho * U[1];
 
-  ADScalar rhoE = 0.5 * rho * (U.dot(U)) + heatCapacity * T + nI * formEnergy_I;
-
   source[0] = raw_value(divergence(rhoU));
 
-  ADScalar YI = mI * nI / rho;
-  ADScalar YE = mE * nE / rho;
-  ADScalar YA = 1.0 - YI - YE;
-  NumberVector<NDIM, ADScalar> gradYA = YA.derivatives();
-  NumberVector<NDIM, ADScalar> gradYI = YI.derivatives();
-  NumberVector<NDIM, ADScalar> gradYE = YE.derivatives();
-  NumberVector<NDIM, ADScalar> V_A1 = - D_A / YA * gradYA;
-  NumberVector<NDIM, ADScalar> V_I1 = - D_I / YI * gradYI;
-  NumberVector<NDIM, ADScalar> V_E1 = - D_E / YE * gradYE;
+  NumberVector<NDIM, ADScalar> gradXA = XA.derivatives();
+  NumberVector<NDIM, ADScalar> gradXI = XI.derivatives();
+  NumberVector<NDIM, ADScalar> gradXE = XE.derivatives();
+  NumberVector<NDIM, ADScalar> V_A1 = - D_A / XA * gradXA;
+  NumberVector<NDIM, ADScalar> V_I1 = - D_I / XI * gradXI;
+  NumberVector<NDIM, ADScalar> V_E1 = - D_E / XE * gradXE;
   //
   // ADScalar mob_I = qe / kB * ZI / T * D_I;
   // ADScalar mob_E = qe / kB * ZE / T * D_E;
@@ -326,11 +342,15 @@ void MASA::periodic_ternary_2d<Scalar>::eval_exact_state(Scalar x,Scalar y,std::
 
   Scalar exact_u = eval_exact_u(x, y);
   Scalar exact_v = eval_exact_v(x, y);
-  Scalar exact_nE = eval_exact_nE(x, y);
-  Scalar exact_nI = eval_exact_nI(x, y);
-  Scalar exact_nA = n0 - exact_nE - exact_nI;
+  Scalar exact_rho = eval_exact_rho(x, y);
+  Scalar exact_YE = eval_exact_YE(x, y);
+  Scalar exact_YI = eval_exact_YI(x, y);
   Scalar exact_T = eval_exact_T(x, y);
-  Scalar exact_rho = mI * exact_nI + mE * exact_nE + mA * exact_nA;
+
+  Scalar exact_YA = 1.0 - exact_YE - exact_YI;
+  Scalar exact_nA = exact_rho * exact_YA / mA;
+  Scalar exact_nI = exact_rho * exact_YI / mI;
+  Scalar exact_nE = exact_rho * exact_YE / mE;
 
   Scalar heatCapacity = CV_I * exact_nI + CV_E * exact_nE + CV_A * exact_nA;
   Scalar exact_rhoE = 0.5 * exact_rho * (exact_u * exact_u + exact_v * exact_v)
@@ -369,25 +389,36 @@ inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_v(inputScalar x, input
 }
 
 template<typename Scalar> template<typename inputScalar>
-inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_nI(inputScalar x, inputScalar y) {
+inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_rho(inputScalar x, inputScalar y) {
   using std::cos;
   using std::sin;
 
-  inputScalar exact_nI = n0 * (X0 + dX0x * cos(2.0 * pi * kx0 * (x / Lx - offset_x0))
-                                  + dX0y * cos(2.0 * pi * ky0 * (y / Ly - offset_y0)));
+  inputScalar exact_rho = rho0 + drhox * cos(2.0 * pi * krhox * (x / Lx - offset_rhox))
+                               + drhoy * cos(2.0 * pi * krhoy * (y / Ly - offset_rhoy));
 
-  return exact_nI;
+  return exact_rho;
 }
 
 template<typename Scalar> template<typename inputScalar>
-inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_nE(inputScalar x, inputScalar y) {
+inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_YI(inputScalar x, inputScalar y) {
   using std::cos;
   using std::sin;
 
-  inputScalar exact_nE = n0 * (X1 + dX1x * cos(2.0 * pi * kx1 * (x / Lx - offset_x1))
-                                  + dX1y * cos(2.0 * pi * ky1 * (y / Ly - offset_y1)));
+  inputScalar exact_YI = Y0 + dY0x * cos(2.0 * pi * kx0 * (x / Lx - offset_x0))
+                            + dY0y * cos(2.0 * pi * ky0 * (y / Ly - offset_y0));
 
-  return exact_nE;
+  return exact_YI;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::periodic_ternary_2d<Scalar>::eval_exact_YE(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_YE = Y1 + dY1x * cos(2.0 * pi * kx1 * (x / Lx - offset_x1))
+                            + dY1y * cos(2.0 * pi * ky1 * (y / Ly - offset_y1));
+
+  return exact_YE;
 }
 
 template<typename Scalar> template<typename inputScalar>

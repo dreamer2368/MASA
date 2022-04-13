@@ -1671,19 +1671,25 @@ namespace MASA
     Scalar offset_vx;
     Scalar offset_vy;
 
-    Scalar n0;
+    Scalar rho0;
+    Scalar drhox;
+    Scalar drhoy;
+    Scalar krhox;
+    Scalar krhoy;
+    Scalar offset_rhox;
+    Scalar offset_rhoy;
 
-    Scalar X0;
-    Scalar dX0x;
-    Scalar dX0y;
+    Scalar Y0;
+    Scalar dY0x;
+    Scalar dY0y;
     Scalar kx0;
     Scalar ky0;
     Scalar offset_x0;
     Scalar offset_y0;
 
-    Scalar X1;
-    Scalar dX1x;
-    Scalar dX1y;
+    Scalar Y1;
+    Scalar dY1x;
+    Scalar dY1y;
     Scalar kx1;
     Scalar ky1;
     Scalar offset_x1;
@@ -1735,9 +1741,11 @@ namespace MASA
     template<typename inputScalar>
     inputScalar eval_exact_v (inputScalar, inputScalar);
     template<typename inputScalar>
-    inputScalar eval_exact_nI (inputScalar, inputScalar);
+    inputScalar eval_exact_rho (inputScalar, inputScalar);
     template<typename inputScalar>
-    inputScalar eval_exact_nE (inputScalar, inputScalar);
+    inputScalar eval_exact_YI (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_YE (inputScalar, inputScalar);
     template<typename inputScalar>
     inputScalar eval_exact_T (inputScalar, inputScalar);
 
