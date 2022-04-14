@@ -1771,87 +1771,36 @@ namespace MASA
 
     void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
   };
-  // template <typename Scalar>
-  // class ternary_2d_periodic_ambipolar : public manufactured_solution<Scalar>
-  // {
-  //   using manufactured_solution<Scalar>::pi;
-  //   using manufactured_solution<Scalar>::PI;
-  //
-  //   Scalar u0;
-  //   Scalar dux;
-  //   Scalar duy;
-  //
-  //   Scalar kux;
-  //   Scalar kuy;
-  //   Scalar offset_ux;
-  //   Scalar offset_uy;
-  //
-  //   Scalar v0;
-  //   Scalar dvx;
-  //   Scalar dvy;
-  //
-  //   Scalar kvx;
-  //   Scalar kvy;
-  //   Scalar offset_vx;
-  //   Scalar offset_vy;
-  //
-  //   Scalar n0;
-  //   Scalar X0;
-  //   Scalar dX;
-  //   Scalar T0;
-  //   Scalar dT;
-  //
-  //   Scalar mA;
-  //   Scalar mI;
-  //   Scalar mE;
-  //
-  //   Scalar R;
-  //
-  //   Scalar CV_A;
-  //   Scalar CV_I;
-  //   Scalar CV_E;
-  //
-  //   Scalar CP_A;
-  //   Scalar CP_I;
-  //   Scalar CP_E;
-  //
-  //   Scalar formEnergy_I;
-  //
-  //   Scalar Lx;
-  //   Scalar Ly;
-  //   Scalar kx;
-  //   Scalar ky;
-  //   Scalar offset_x;
-  //   Scalar offset_y;
-  //
-  //   Scalar kTx;
-  //   Scalar kTy;
-  //   Scalar offset_Tx;
-  //   Scalar offset_Ty;
-  //
-  //   // transport property
-  //   Scalar mu;
-  //   Scalar muB;
-  //   Scalar k_heat;
-  //   Scalar D_A;
-  //   Scalar D_I;
-  //   Scalar D_E;
-  //
-  //   Scalar qe;
-  //   Scalar kB;
-  //
-  //   Scalar ZI;
-  //   Scalar ZE;
-  //
-  // public:
-  //   ternary_2d_periodic_ambipolar(); // constructor
-  //   int init_var();          // default problem values
-  //
-  //   std::vector<Scalar> eval_q_state (Scalar,Scalar);
-  //
-  //   Scalar eval_exact_state  (Scalar,Scalar,int);
-  //
-  // };
+
+  template <typename Scalar>
+  class ternary_2d_2t_periodic_ambipolar : public ternary_2d_periodic<Scalar>
+  {
+  public:
+    Scalar TE0;
+    Scalar dTEx;
+    Scalar dTEy;
+    Scalar kTEx;
+    Scalar kTEy;
+    Scalar offset_TEx;
+    Scalar offset_TEy;
+
+    Scalar k_E;
+
+    // momentum transfer frequency
+    Scalar nu_I;
+    Scalar nu_A;
+
+    template<typename inputScalar>
+    inputScalar eval_exact_TE (inputScalar, inputScalar);
+
+  public:
+    ternary_2d_2t_periodic_ambipolar();
+    int init_var();
+
+    void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
+
+    void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
+  };
 
 } // end MASA namespace
 
