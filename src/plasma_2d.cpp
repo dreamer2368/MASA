@@ -795,6 +795,281 @@ inputScalar MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::eval_exact_TE(inputS
   return exact_TE;
 }
 
+/* ------------------------------------------------
+ *
+ *         2D 2T AMBIPOLAR TERNARY MIXTURE WITH WALL
+ *
+ *
+ *
+ * -----------------------------------------------
+ */
+
+template <typename Scalar>
+MASA::ternary_2d_2t_ambipolar_wall<Scalar>::ternary_2d_2t_ambipolar_wall()
+{
+  this->mmsname = "ternary_2d_2t_ambipolar_wall";
+
+  this->register_var("n0", &n0);
+  this->register_var("dnx", &dnx);
+  this->register_var("dny", &dny);
+  this->register_var("knx", &knx);
+  this->register_var("kny", &kny);
+  this->register_var("offset_nx", &offset_nx);
+  this->register_var("offset_ny", &offset_ny);
+
+  this->register_var("X0", &X0);
+  this->register_var("dX0x", &dX0x);
+  this->register_var("dX0y", &dX0y);
+
+  // init defaults
+  this->init_var();
+}
+
+template <typename Scalar>
+int MASA::ternary_2d_2t_ambipolar_wall<Scalar>::init_var()
+{
+  int err = 0;
+
+  err += MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::init_var();
+
+  err += this->set_var("n0", 1.38);
+  err += this->set_var("dnx", 1.38);
+  err += this->set_var("dny", 1.38);
+  err += this->set_var("knx", 1.38);
+  err += this->set_var("kny", 1.38);
+  err += this->set_var("offset_nx", 1.38);
+  err += this->set_var("offset_ny", 1.38);
+
+  err += this->set_var("X0", 1.38);
+  err += this->set_var("dX0x", 1.38);
+  err += this->set_var("dX0y", 1.38);
+
+  return err;
+}
+
+template <typename Scalar>
+void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::vector<Scalar> &source)
+{
+  using std::cos;
+  using std::sin;
+
+  typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
+  typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
+  typedef SecondDerivType ADScalar;
+
+  const ADScalar x = ADScalar(x1,NumberVectorUnitVector<NDIM, 0, Scalar>::value());
+  const ADScalar y = ADScalar(y1,NumberVectorUnitVector<NDIM, 1, Scalar>::value());
+
+  source.resize(6);
+
+  // Treat velocity as a vector
+  NumberVector<NDIM, ADScalar> U;
+  U[0] = eval_exact_u(x, y);
+  U[1] = eval_exact_v(x, y);
+
+  // ADScalar rho = this->eval_exact_rho(x, y);
+  ADScalar nTotal = eval_exact_n(x, y);
+  // ADScalar YE = eval_exact_YE(x, y);
+  ADScalar XI = eval_exact_XI(x, y);
+  ADScalar T = eval_exact_T(x, y);
+  ADScalar TE = eval_exact_TE(x, y);
+
+  ADScalar XE = XI;
+  ADScalar XA = 1.0 - XE - XI;
+
+  ADScalar nI = nTotal * XI;
+  ADScalar nE = nI;
+  ADScalar nA = nTotal - nI - nE;
+
+  ADScalar rho = nA * this->mA + nI * this->mI + nE * this->mE;
+  ADScalar YI = this->mI * nI / rho;
+  ADScalar YE = this->mE * nE / rho;
+  ADScalar YA = this->mA * nA / rho;
+
+  ADScalar pe = nE * this->R * TE;
+  ADScalar p = (nA + nI) * this->R * T + pe;
+  ADScalar Ch = this->CV_I * nI + this->CV_A * nA;
+  ADScalar Ue = this->CV_E * nE * TE;
+  ADScalar rhoE = 0.5 * rho * (U.dot(U)) + Ch * T + Ue + nI * this->formEnergy_I;
+
+  NumberVector<NDIM, ADScalar> rhoU;
+  rhoU[0] = rho * U[0];
+  rhoU[1] = rho * U[1];
+
+  source[0] = raw_value(divergence(rhoU));
+
+  NumberVector<NDIM, ADScalar> gradXA = XA.derivatives();
+  NumberVector<NDIM, ADScalar> gradXI = XI.derivatives();
+  NumberVector<NDIM, ADScalar> gradXE = XE.derivatives();
+  NumberVector<NDIM, ADScalar> V_A1 = - this->D_A / XA * gradXA;
+  NumberVector<NDIM, ADScalar> V_I2 = - this->D_I / XI * gradXI;
+  NumberVector<NDIM, ADScalar> V_E2 = - this->D_E / XE * gradXE;
+
+  ADScalar mob_I = this->qe / this->kB * this->ZI / T * this->D_I;
+  ADScalar mob_E = this->qe / this->kB * this->ZE / TE * this->D_E;
+  ADScalar mho = mob_I * nI * this->ZI + mob_E * nI * this->ZE;
+
+  NumberVector<NDIM, ADScalar> ambE = - (V_I2 * this->ZI + V_E2 * this->ZE) * nI / mho;
+  NumberVector<NDIM, ADScalar> V_I1 = V_I2 + mob_I * ambE;
+  NumberVector<NDIM, ADScalar> V_E1 = V_E2 + mob_E * ambE;
+
+  NumberVector<NDIM, ADScalar> Vc = YI * V_I1 + YE * V_E1 + YA * V_A1;
+  NumberVector<NDIM, ADScalar> V_I = V_I1 - Vc;
+  NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
+  NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)));
+  // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
+
+  // The shear strain tensor
+  NumberVector<NDIM, typename ADScalar::derivatives_type> GradU = gradient(U);
+
+  // The identity tensor I
+  NumberVector<NDIM, NumberVector<NDIM, Scalar>> Identity = NumberVector<NDIM, Scalar>::identity();
+
+  // The shear stress tensor
+  NumberVector<NDIM, NumberVector<NDIM, ADScalar>> Tau = this->mu * (GradU + transpose(GradU))
+                                                         + (this->muB - 2./3. * this->mu)*divergence(U)*Identity;
+
+  NumberVector<NDIM, Scalar> source_rhoU = raw_value(divergence(rho*U.outerproduct(U) - Tau) + p.derivatives());
+  source[1] = source_rhoU[0];
+  source[2] = source_rhoU[1];
+
+  // Electron heat flux
+  NumberVector<NDIM, ADScalar> qe = - this->k_E * TE.derivatives()
+                                    + nE * this->CP_E * TE * V_E;
+
+  // Energy transfer by elastic collision
+  Scalar m_EA = this->mE * this->mA / (this->mE + this->mA) / (this->mE + this->mA);
+  Scalar m_EI = this->mE * this->mI / (this->mE + this->mI) / (this->mE + this->mI);
+  ADScalar Wel = - 2.0 * nE * (m_EA * this->nu_A + m_EI * this->nu_I)
+                            * 1.5 * this->R * (TE - T);
+
+  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel);
+
+  // Temperature flux
+  NumberVector<NDIM, ADScalar> q = - this->k_heat * T.derivatives()
+                                   + nI * (this->CP_I * T + this->formEnergy_I) * V_I
+                                   + nA * this->CP_A * T * V_A;
+
+  source[3] = raw_value(divergence((rhoE + p) * U + q + qe - Tau.dot(U)));
+
+  return;
+}
+
+/* ------------------------------------------------
+ *
+ *
+ *   Analytical terms
+ *
+ * -----------------------------------------------
+ */
+
+template <typename Scalar>
+void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_state(Scalar x,Scalar y,std::vector<Scalar> &state)
+{
+  state.resize(6);
+
+  Scalar exact_u = eval_exact_u(x, y);
+  Scalar exact_v = eval_exact_v(x, y);
+  Scalar exact_n = eval_exact_n(x, y);
+  // Scalar exact_YE = eval_exact_YE(x, y); // not used for ambipolar case.
+  Scalar exact_XI = eval_exact_XI(x, y);
+  Scalar exact_T = eval_exact_T(x, y);
+  Scalar exact_TE = eval_exact_TE(x, y);
+
+  Scalar exact_nI = exact_n * exact_XI;
+  Scalar exact_nE = exact_nI;
+  Scalar exact_nA = exact_n - 2.0 * exact_nI;
+
+  Scalar exact_rho = exact_nA * this->mA + exact_nI * this->mI + exact_nE * this->mE;
+
+  Scalar exact_Ue = this->CV_E * exact_nE * exact_TE;
+
+  Scalar Ch = this->CV_I * exact_nI + this->CV_A * exact_nA;
+  Scalar exact_rhoE = 0.5 * exact_rho * (exact_u * exact_u + exact_v * exact_v)
+                      + Ch * exact_T + exact_Ue + exact_nI * this->formEnergy_I;
+
+  state[0] = exact_rho;
+  state[1] = exact_rho * exact_u;
+  state[2] = exact_rho * exact_v;
+  state[3] = exact_rhoE;
+  state[4] = this->mI * exact_nI;
+  state[5] = exact_Ue;
+
+  return;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_u(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_u = (this->u0 + this->dux * cos(2.0 * this->pi * this->kux * (x / this->Lx - this->offset_ux)))
+                        * (1.0 - (2.0 * y / this->Ly - 1.0) * (2.0 * y / this->Ly - 1.0))
+                        + this->duy * sin(this->pi * this->kuy * y / this->Ly);
+
+  return exact_u;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_v(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_v = (this->v0 + this->dvx * cos(2.0 * this->pi * this->kvx * (x / this->Lx - this->offset_vx)))
+                         * (1.0 - (2.0 * y / this->Ly - 1.0) * (2.0 * y / this->Ly - 1.0))
+                         + this->dvy * sin(this->pi * this->kvy * y / this->Ly);
+
+  return exact_v;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_n(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_n = n0 + dnx * cos(2.0 * this->pi * knx * (x / this->Lx - offset_nx))
+                           + dny * cos(2.0 * this->pi * kny * (y / this->Ly - offset_ny));
+
+  return exact_n;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_XI(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_XI = X0 + dX0x * cos(2.0 * this->pi * this->kx0 * (x / this->Lx - this->offset_x0))
+                                   * cos(this->pi * this->ky0 * y / this->Ly);
+
+  return exact_XI;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_T(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_T = this->T0 + this->dTx * cos(2.0 * this->pi * this->kTx * (x / this->Lx - this->offset_Tx))
+                                             * (1.0 - (1.0 - y / this->Ly) * (1.0 - y / this->Ly))
+                                 + this->dTy * sin(this->pi * (0.5 + this->kTy) * y / this->Ly);
+
+  return exact_T;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_TE(inputScalar x, inputScalar y) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar exact_TE = this->TE0 + this->dTEx * cos(2.0 * this->pi * this->kTEx * (x / this->Lx - this->offset_TEx))
+                                                * (1.0 - (1.0 - y / this->Ly) * (1.0 - y / this->Ly))
+                                   + this->dTEy * sin(this->pi * (0.5 + this->kTEy) * y / this->Ly);
+
+  return exact_TE;
+}
+
 // ----------------------------------------
 //   Template Instantiation(s)
 // ----------------------------------------
@@ -802,5 +1077,6 @@ inputScalar MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::eval_exact_TE(inputS
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_periodic);
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_periodic_ambipolar);
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_2t_periodic_ambipolar);
+MASA_INSTANTIATE_ALL(MASA::ternary_2d_2t_ambipolar_wall);
 
 #endif // HAVE_METAPHYSICL
