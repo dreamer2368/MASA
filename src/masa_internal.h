@@ -1840,6 +1840,41 @@ namespace MASA
     void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
   };
 
+  template <typename Scalar>
+  class ternary_2d_2t_ambipolar_inoutlet : public ternary_2d_2t_ambipolar_wall<Scalar>
+  {
+  public:
+    Scalar pLx;
+    Scalar dpx;
+    Scalar dpy;
+
+    Scalar kpx;
+    Scalar kpy;
+    Scalar offset_px;
+    Scalar offset_py;
+
+    template<typename inputScalar>
+    inputScalar eval_exact_u (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_v (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_n (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_XI (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_TE (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_p (inputScalar, inputScalar);
+
+  public:
+    ternary_2d_2t_ambipolar_inoutlet();
+    int init_var();
+
+    void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
+
+    void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
+  };
+
 } // end MASA namespace
 
 
