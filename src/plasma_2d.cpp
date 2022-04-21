@@ -138,6 +138,16 @@ MASA::ternary_2d_periodic<Scalar>::ternary_2d_periodic()
   this->register_var("ZI", &ZI);
   this->register_var("ZE", &ZE);
 
+  this->register_var("Af", &Af);
+  this->register_var("bf", &bf);
+  this->register_var("Ef", &Ef);
+
+  this->register_var("Ab", &Ab);
+  this->register_var("bb", &bb);
+  this->register_var("Eb", &Eb);
+
+  this->register_var("rE", &rE);
+
   // init defaults
   this->init_var();
 
@@ -231,6 +241,16 @@ int MASA::ternary_2d_periodic<Scalar>::init_var()
   err += this->set_var("ZI", 1.38);
   err += this->set_var("ZE", 1.38);
 
+  err += this->set_var("Af", 1.38);
+  err += this->set_var("bf", 1.38);
+  err += this->set_var("Ef", 1.38);
+
+  err += this->set_var("Ab", 1.38);
+  err += this->set_var("bb", 1.38);
+  err += this->set_var("Eb", 1.38);
+
+  err += this->set_var("rE", 1.38);
+
   return err;
 }
 
@@ -240,6 +260,8 @@ void MASA::ternary_2d_periodic<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::ve
 {
   using std::cos;
   using std::sin;
+  using std::pow;
+  using std::exp;
 
   typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
   typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
@@ -285,22 +307,18 @@ void MASA::ternary_2d_periodic<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::ve
   NumberVector<NDIM, ADScalar> V_A1 = - D_A / XA * gradXA;
   NumberVector<NDIM, ADScalar> V_I1 = - D_I / XI * gradXI;
   NumberVector<NDIM, ADScalar> V_E1 = - D_E / XE * gradXE;
-  //
-  // ADScalar mob_I = qe / kB * ZI / T * D_I;
-  // ADScalar mob_E = qe / kB * ZE / T * D_E;
-  // ADScalar mho = mob_I * ne * ZI + mob_E * ne * ZE;
-  //
-  // NumberVector<NDIM, ADScalar> ambE = - (V_I2 * ZI + V_E2 * ZE) * ne / mho;
-  // NumberVector<NDIM, ADScalar> V_I1 = V_I2 + mob_I * ambE;
-  // NumberVector<NDIM, ADScalar> V_E1 = V_E2 + mob_E * ambE;
-  //
+
   NumberVector<NDIM, ADScalar> Vc = YI * V_I1 + YE * V_E1 + YA * V_A1;
   NumberVector<NDIM, ADScalar> V_I = V_I1 - Vc;
   NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
   NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
 
-  source[4] = raw_value(divergence(mI * nI * (U + V_I)));
-  source[5] = raw_value(divergence(mE * nE * (U + V_E)));
+  ADScalar kfwd = Af * pow(T, bf) * exp(- Ef / R / T);
+  ADScalar kC = Ab * pow(T, bb) * exp(- Eb / T);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(mI * nI * (U + V_I)) - mI * RI);
+  source[5] = raw_value(divergence(mE * nE * (U + V_E)) - mE * RI);
 
   // The shear strain tensor
   NumberVector<NDIM, typename ADScalar::derivatives_type> GradU = gradient(U);
@@ -454,6 +472,8 @@ void MASA::ternary_2d_periodic_ambipolar<Scalar>::eval_q_state(Scalar x1,Scalar 
 {
   using std::cos;
   using std::sin;
+  using std::pow;
+  using std::exp;
 
   typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
   typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
@@ -514,7 +534,11 @@ void MASA::ternary_2d_periodic_ambipolar<Scalar>::eval_q_state(Scalar x1,Scalar 
   NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
   NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
 
-  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)));
+  ADScalar kfwd = this->Af * pow(T, this->bf) * exp(- this->Ef / this->R / T);
+  ADScalar kC = this->Ab * pow(T, this->bb) * exp(- this->Eb / T);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)) - this->mI * RI);
   // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
 
   // The shear strain tensor
@@ -640,6 +664,8 @@ void MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::eval_q_state(Scalar x1,Scal
 {
   using std::cos;
   using std::sin;
+  using std::pow;
+  using std::exp;
 
   typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
   typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
@@ -703,7 +729,11 @@ void MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::eval_q_state(Scalar x1,Scal
   NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
   NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
 
-  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)));
+  ADScalar kfwd = this->Af * pow(TE, this->bf) * exp(- this->Ef / this->R / TE);
+  ADScalar kC = this->Ab * pow(TE, this->bb) * exp(- this->Eb / TE);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)) - this->mI * RI);
   // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
 
   // The shear strain tensor
@@ -730,7 +760,7 @@ void MASA::ternary_2d_2t_periodic_ambipolar<Scalar>::eval_q_state(Scalar x1,Scal
   ADScalar Wel = - 2.0 * nE * (m_EA * nu_A + m_EI * nu_I)
                             * 1.5 * this->R * (TE - T);
 
-  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel);
+  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel + this->rE * RI);
 
   // Temperature flux
   NumberVector<NDIM, ADScalar> q = - this->k_heat * T.derivatives()
@@ -852,6 +882,8 @@ void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(Scalar x1,Scalar y
 {
   using std::cos;
   using std::sin;
+  using std::pow;
+  using std::exp;
 
   typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
   typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
@@ -918,7 +950,11 @@ void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(Scalar x1,Scalar y
   NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
   NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
 
-  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)));
+  ADScalar kfwd = this->Af * pow(TE, this->bf) * exp(- this->Ef / this->R / TE);
+  ADScalar kC = this->Ab * pow(TE, this->bb) * exp(- this->Eb / TE);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)) - this->mI * RI);
   // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
 
   // The shear strain tensor
@@ -945,7 +981,7 @@ void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(Scalar x1,Scalar y
   ADScalar Wel = - 2.0 * nE * (m_EA * this->nu_A + m_EI * this->nu_I)
                             * 1.5 * this->R * (TE - T);
 
-  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel);
+  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel + this->rE * RI);
 
   // Temperature flux
   NumberVector<NDIM, ADScalar> q = - this->k_heat * T.derivatives()
@@ -1119,6 +1155,8 @@ void MASA::ternary_2d_2t_ambipolar_inoutlet<Scalar>::eval_q_state(Scalar x1,Scal
 {
   using std::cos;
   using std::sin;
+  using std::pow;
+  using std::exp;
 
   typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
   typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
@@ -1186,7 +1224,11 @@ void MASA::ternary_2d_2t_ambipolar_inoutlet<Scalar>::eval_q_state(Scalar x1,Scal
   NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
   NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
 
-  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)));
+  ADScalar kfwd = this->Af * pow(TE, this->bf) * exp(- this->Ef / this->R / TE);
+  ADScalar kC = this->Ab * pow(TE, this->bb) * exp(- this->Eb / TE);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)) - this->mI * RI);
   // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
 
   // The shear strain tensor
@@ -1213,7 +1255,7 @@ void MASA::ternary_2d_2t_ambipolar_inoutlet<Scalar>::eval_q_state(Scalar x1,Scal
   ADScalar Wel = - 2.0 * nE * (m_EA * this->nu_A + m_EI * this->nu_I)
                             * 1.5 * this->R * (TE - T);
 
-  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel);
+  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel + this->rE * RI);
 
   // Temperature flux
   NumberVector<NDIM, ADScalar> q = - this->k_heat * T.derivatives()

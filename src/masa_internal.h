@@ -1737,6 +1737,17 @@ namespace MASA
     Scalar ZI;
     Scalar ZE;
 
+    // Arrhenius forward reaction
+    Scalar Af;
+    Scalar bf;
+    Scalar Ef;
+    // equilibrium constant
+    Scalar Ab;
+    Scalar bb;
+    Scalar Eb;
+    // reaction Energy
+    Scalar rE;
+
     template<typename inputScalar>
     inputScalar eval_exact_u (inputScalar, inputScalar);
     template<typename inputScalar>
