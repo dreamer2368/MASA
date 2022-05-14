@@ -1842,6 +1842,8 @@ namespace MASA
     template<typename inputScalar>
     inputScalar eval_exact_TE (inputScalar, inputScalar);
 
+    void eval_state_from_prim (std::vector<Scalar>&, std::vector<Scalar>&);
+
   public:
     ternary_2d_2t_ambipolar_wall();
     int init_var();
@@ -1921,6 +1923,9 @@ namespace MASA
     inputScalar eval_exact_T (inputScalar, inputScalar);
     template<typename inputScalar>
     inputScalar eval_exact_TE (inputScalar, inputScalar);
+
+    template<typename inputScalar>
+    inputScalar interpolate (inputScalar, std::vector<inputScalar>&);
 
   public:
     ternary_2d_sheath();

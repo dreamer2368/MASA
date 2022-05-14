@@ -1005,14 +1005,32 @@ template <typename Scalar>
 void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_state(Scalar x,Scalar y,std::vector<Scalar> &state)
 {
   state.resize(6);
+  std::vector<Scalar> prim(6);
 
-  Scalar exact_u = eval_exact_u(x, y);
-  Scalar exact_v = eval_exact_v(x, y);
-  Scalar exact_n = eval_exact_n(x, y);
+  prim[0] = eval_exact_u(x, y);
+  prim[1] = eval_exact_v(x, y);
+  prim[2] = eval_exact_n(x, y);
   // Scalar exact_YE = eval_exact_YE(x, y); // not used for ambipolar case.
-  Scalar exact_XI = eval_exact_XI(x, y);
-  Scalar exact_T = eval_exact_T(x, y);
-  Scalar exact_TE = eval_exact_TE(x, y);
+  prim[3] = eval_exact_XI(x, y);
+  prim[4] = eval_exact_T(x, y);
+  prim[5] = eval_exact_TE(x, y);
+
+  eval_state_from_prim(prim, state);
+
+  return;
+}
+
+template <typename Scalar>
+void MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_state_from_prim(std::vector<Scalar> &prim,
+                                                                      std::vector<Scalar> &state) {
+  state.resize(6);
+
+  Scalar exact_u = prim[0];
+  Scalar exact_v = prim[1];
+  Scalar exact_n = prim[2];
+  Scalar exact_XI = prim[3];
+  Scalar exact_T = prim[4];
+  Scalar exact_TE = prim[5];
 
   Scalar exact_nI = exact_n * exact_XI;
   Scalar exact_nE = exact_nI;
@@ -1458,54 +1476,22 @@ void MASA::ternary_2d_sheath<Scalar>::eval_exact_state(Scalar x,Scalar y,std::ve
 {
   this->initialize_dXa();
 
-  MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_state(x, y, state);
+  std::vector<Scalar> prim(6);
 
-  // Scalar exact_u = this->eval_exact_u(x, y);
-  // Scalar exact_v = this->eval_exact_v(x, y);
-  // Scalar exact_n = this->eval_exact_n(x, y);
-  // // Scalar exact_n0 = this->eval_exact_n(x, 0.0);
-  // Scalar Te0 = eval_exact_Te0(x);
-  // Scalar Th0 = eval_exact_Th0(x);
-  // Scalar XI0 = eval_exact_XI0(x);
-  // Scalar nA0 = exact_n0 * (1.0 - 2.0 * XI0);
-  // Scalar VBI0 = -sqrt(this->R * (Th0 + Te0) / this->mI);
-  // Scalar VBE0 = VBI0;
-  // Scalar VBA0 = -exact_n0 * XI0 * (this->mI * VBI0 + this->mE * VBE0) /
-  //               nA0 / this->mA;
-  // Scalar vTe = sqrt(8.0 * this->R * Te0 / this->mE / this->pi);
-  // Scalar gamma = -log(-4.0 / vTe * VBE0);
-  // Scalar qe0 = exact_n0 * XI0 * this->R * Te0 * (gamma + 2.0) * VBE0;
-  // Scalar dTe0 = (exact_n0 * XI0 * this->CP_E * Te0 * VBE0 - qe0) / this->k_E;
-  // Scalar dTh0 = exact_n0 * (XI0 * (this->CP_I * Th0 + this->formEnergy_I) * VBI0
-  //                           + (1.0 - 2.0 * XI0) * this->CP_A * Th0 * VBA0) / this->k_heat;
-  //
-  // Scalar XIL = eval_exact_XIL(x);
-  // Scalar TeL = eval_exact_TeL(x, y);
-  //
-  //
-  // Scalar exact_XI = this->eval_exact_XI(x, y);
-  // Scalar exact_T = this->eval_exact_T(x, y);
-  // Scalar exact_TE = this->eval_exact_TE(x, y);
-  //
-  // Scalar exact_nI = exact_n * exact_XI;
-  // Scalar exact_nE = exact_nI;
-  // Scalar exact_nA = exact_n - 2.0 * exact_nI;
-  //
-  // Scalar exact_rho = exact_nA * this->mA + exact_nI * this->mI + exact_nE * this->mE;
-  //
-  // Scalar exact_Ue = this->CV_E * exact_nE * exact_TE;
-  //
-  // Scalar Ch = this->CV_I * exact_nI + this->CV_A * exact_nA;
-  // Scalar exact_rhoE = 0.5 * exact_rho * (exact_u * exact_u + exact_v * exact_v)
-  //                     + Ch * exact_T + exact_Ue + exact_nI * this->formEnergy_I;
-  //
-  // state[0] = exact_rho;
-  // state[1] = exact_rho * exact_u;
-  // state[2] = exact_rho * exact_v;
-  // state[3] = exact_rhoE;
-  // state[4] = this->mI * exact_nI;
-  // state[5] = exact_Ue;
+  prim[0] = this->eval_exact_u(x, y);
+  prim[1] = this->eval_exact_v(x, y);
+  prim[2] = this->eval_exact_n(x, y);
+  // Scalar exact_YE = eval_exact_YE(x, y); // not used for ambipolar case.
+  prim[3] = this->eval_exact_XI(x, y);
+  prim[4] = this->eval_exact_T(x, y);
+  prim[5] = this->eval_exact_TE(x, y);
 
+  this->eval_state_from_prim(prim, state);
+
+  // for (int eq = 2; eq < 6; eq++) {
+  //   if (prim[eq] <= 0.0) exit(-1);
+  //   if ((eq == 3) && (prim[eq] > 0.5)) exit(-1);
+  // }
   return;
 }
 
@@ -1641,10 +1627,12 @@ inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_TE(inputScalar x, inputS
 
   inputScalar yp = y / this->Ly;
 
-  inputScalar exact_Te0 = this->Te0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
-                          this->Ly * dTe0 * (yp - 2.0 * yp * yp + yp * yp * yp) +
-                          this->TeL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
-                          this->Ly * dTeL * (yp * yp - yp * yp * yp);
+  std::vector<inputScalar> coeff(4);
+  coeff[0] = this->Te0;
+  coeff[1] = this->Ly * dTe0;
+  coeff[2] = this->TeL;
+  coeff[3] = this->Ly * dTeL;
+  inputScalar exact_Te0 = interpolate(yp, coeff);
 
   return exact_Te0;
 }
@@ -1653,10 +1641,13 @@ template<typename Scalar> template<typename inputScalar>
 inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_XI(inputScalar x, inputScalar y) {
   inputScalar yp = y / this->Ly;
 
-  inputScalar exact_XI = this->XI0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
-                         this->Ly * dXa0[0] * (yp - 2.0 * yp * yp + yp * yp * yp) +
-                         this->XIL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
-                         this->Ly * dXaL[0] * (yp * yp - yp * yp * yp);
+  std::vector<inputScalar> coeff(4);
+  coeff[0] = this->XI0;
+  coeff[1] = this->Ly * this->dXa0[0];
+  coeff[2] = this->XIL;
+  coeff[3] = this->Ly * this->dXaL[0];
+
+  inputScalar exact_XI = interpolate(yp, coeff);
 
   return exact_XI;
 }
@@ -1687,12 +1678,27 @@ inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_T(inputScalar x, inputSc
 
   inputScalar yp = y / this->Ly;
 
-  inputScalar exact_Th0 = this->Th0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
-                          this->Ly * dTh0 * (yp - 2.0 * yp * yp + yp * yp * yp) +
-                          this->ThL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
-                          this->Ly * dThL * (yp * yp - yp * yp * yp);
+  std::vector<inputScalar> coeff(4);
+  coeff[0] = this->Th0;
+  coeff[1] = this->Ly * dTh0;
+  coeff[2] = this->ThL;
+  coeff[3] = this->Ly * dThL;
+  inputScalar exact_Th0 = interpolate(yp, coeff);
 
   return exact_Th0;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_sheath<Scalar>::interpolate(inputScalar y, std::vector<inputScalar> &coeff) {
+  // func(y=0) = coeff[0]
+  // d/dy func(y=0) = coeff[1]
+  // func(y=1) = coeff[2]
+  // d/dy func(y=1) = coeff[3]
+  inputScalar func = coeff[0] * (1.0 - 3.0 * y * y + 2.0 * y * y * y) +
+                     coeff[1] * (y - 2.0 * y * y + y * y * y) +
+                     coeff[2] * (3.0 * y * y - 2.0 * y * y * y) +
+                     coeff[3] * (- y * y + y * y * y);
+  return func;
 }
 
 // ----------------------------------------
