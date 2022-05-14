@@ -1886,6 +1886,51 @@ namespace MASA
     void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
   };
 
+  template <typename Scalar>
+  class ternary_2d_sheath : public ternary_2d_2t_ambipolar_wall<Scalar>
+  {
+  public:
+    bool initialized;
+
+    Scalar Te0;
+    Scalar Th0;
+    Scalar XI0;
+
+    Scalar TeL;
+    Scalar ThL;
+    Scalar XIL;
+
+    std::vector<Scalar> dXa0;
+    std::vector<Scalar> dXaL;
+    std::vector<Scalar> VB0;
+    std::vector<Scalar> VBL;
+
+    void compute_dXa(Scalar, Scalar, Scalar, Scalar,
+                     std::vector<Scalar>&, std::vector<Scalar>&);
+    void initialize_dXa();
+
+    template<typename inputScalar>
+    inputScalar eval_exact_dThL (inputScalar);
+    // template<typename inputScalar>
+    // inputScalar eval_exact_u (inputScalar, inputScalar);
+    // template<typename inputScalar>
+    // inputScalar eval_exact_v (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_XI (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_T (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_exact_TE (inputScalar, inputScalar);
+
+  public:
+    ternary_2d_sheath();
+    int init_var();
+
+    void eval_q_state (Scalar,Scalar,std::vector<Scalar>&);
+
+    void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
+  };
+
 } // end MASA namespace
 
 

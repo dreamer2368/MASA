@@ -157,6 +157,7 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   anim.push_back(new ternary_2d_2t_periodic_ambipolar<Scalar>());
   anim.push_back(new ternary_2d_2t_ambipolar_wall<Scalar>());
   anim.push_back(new ternary_2d_2t_ambipolar_inoutlet<Scalar>());
+  anim.push_back(new ternary_2d_sheath<Scalar>());
 
   // MetaPhysicL-based solutions
 #ifdef HAVE_METAPHYSICL

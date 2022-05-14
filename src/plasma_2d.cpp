@@ -1391,6 +1391,310 @@ inputScalar MASA::ternary_2d_2t_ambipolar_inoutlet<Scalar>::eval_exact_TE(inputS
   return p0 / nTotal0 / this->R + exact_dTE;
 }
 
+/* ------------------------------------------------
+ *
+ *         2D 2T AMBIPOLAR TERNARY MIXTURE WITH SHEATH (GENERAL WALL)
+ *
+ *
+ *
+ * -----------------------------------------------
+ */
+
+template <typename Scalar>
+MASA::ternary_2d_sheath<Scalar>::ternary_2d_sheath()
+{
+  this->mmsname = "ternary_2d_sheath";
+
+  this->register_var("Te0", &Te0);
+  this->register_var("Th0", &Th0);
+  this->register_var("XI0", &XI0);
+
+  this->register_var("TeL", &TeL);
+  this->register_var("ThL", &ThL);
+  this->register_var("XIL", &XIL);
+
+  // init defaults
+  this->init_var();
+}
+
+template <typename Scalar>
+int MASA::ternary_2d_sheath<Scalar>::init_var()
+{
+  int err = 0;
+
+  err += MASA::ternary_2d_2t_ambipolar_wall<Scalar>::init_var();
+
+  err += this->set_var("Te0", 1.38);
+  err += this->set_var("Th0", 1.38);
+  err += this->set_var("XI0", 1.38);
+
+  err += this->set_var("TeL", 1.38);
+  err += this->set_var("ThL", 1.38);
+  err += this->set_var("XIL", 1.38);
+
+  this->initialized = false;  // initialize after solving for dXa.
+
+  return err;
+}
+
+template <typename Scalar>
+void MASA::ternary_2d_sheath<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::vector<Scalar> &source)
+{
+  this->initialize_dXa();
+
+  MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(x1, y1, source);
+}
+
+/* ------------------------------------------------
+ *
+ *
+ *   Analytical terms
+ *
+ * -----------------------------------------------
+ */
+
+template <typename Scalar>
+void MASA::ternary_2d_sheath<Scalar>::eval_exact_state(Scalar x,Scalar y,std::vector<Scalar> &state)
+{
+  this->initialize_dXa();
+
+  MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_exact_state(x, y, state);
+
+  // Scalar exact_u = this->eval_exact_u(x, y);
+  // Scalar exact_v = this->eval_exact_v(x, y);
+  // Scalar exact_n = this->eval_exact_n(x, y);
+  // // Scalar exact_n0 = this->eval_exact_n(x, 0.0);
+  // Scalar Te0 = eval_exact_Te0(x);
+  // Scalar Th0 = eval_exact_Th0(x);
+  // Scalar XI0 = eval_exact_XI0(x);
+  // Scalar nA0 = exact_n0 * (1.0 - 2.0 * XI0);
+  // Scalar VBI0 = -sqrt(this->R * (Th0 + Te0) / this->mI);
+  // Scalar VBE0 = VBI0;
+  // Scalar VBA0 = -exact_n0 * XI0 * (this->mI * VBI0 + this->mE * VBE0) /
+  //               nA0 / this->mA;
+  // Scalar vTe = sqrt(8.0 * this->R * Te0 / this->mE / this->pi);
+  // Scalar gamma = -log(-4.0 / vTe * VBE0);
+  // Scalar qe0 = exact_n0 * XI0 * this->R * Te0 * (gamma + 2.0) * VBE0;
+  // Scalar dTe0 = (exact_n0 * XI0 * this->CP_E * Te0 * VBE0 - qe0) / this->k_E;
+  // Scalar dTh0 = exact_n0 * (XI0 * (this->CP_I * Th0 + this->formEnergy_I) * VBI0
+  //                           + (1.0 - 2.0 * XI0) * this->CP_A * Th0 * VBA0) / this->k_heat;
+  //
+  // Scalar XIL = eval_exact_XIL(x);
+  // Scalar TeL = eval_exact_TeL(x, y);
+  //
+  //
+  // Scalar exact_XI = this->eval_exact_XI(x, y);
+  // Scalar exact_T = this->eval_exact_T(x, y);
+  // Scalar exact_TE = this->eval_exact_TE(x, y);
+  //
+  // Scalar exact_nI = exact_n * exact_XI;
+  // Scalar exact_nE = exact_nI;
+  // Scalar exact_nA = exact_n - 2.0 * exact_nI;
+  //
+  // Scalar exact_rho = exact_nA * this->mA + exact_nI * this->mI + exact_nE * this->mE;
+  //
+  // Scalar exact_Ue = this->CV_E * exact_nE * exact_TE;
+  //
+  // Scalar Ch = this->CV_I * exact_nI + this->CV_A * exact_nA;
+  // Scalar exact_rhoE = 0.5 * exact_rho * (exact_u * exact_u + exact_v * exact_v)
+  //                     + Ch * exact_T + exact_Ue + exact_nI * this->formEnergy_I;
+  //
+  // state[0] = exact_rho;
+  // state[1] = exact_rho * exact_u;
+  // state[2] = exact_rho * exact_v;
+  // state[3] = exact_rhoE;
+  // state[4] = this->mI * exact_nI;
+  // state[5] = exact_Ue;
+
+  return;
+}
+
+template<typename Scalar>
+void MASA::ternary_2d_sheath<Scalar>::compute_dXa(Scalar _normal, Scalar _XI, Scalar _Te, Scalar _Th,
+                                                  std::vector<Scalar> &VB, std::vector<Scalar> &dXa) {
+  NumberVector<3, Scalar> X0;
+  X0[0] = _XI;
+  X0[1] = X0[0];
+  X0[2] = 1.0 - 2.0 * X0[0];
+
+  NumberVector<3, Scalar> Y0;
+  Y0[0] = X0[0] * this->mI;
+  Y0[1] = X0[1] * this->mE;
+  Y0[2] = X0[2] * this->mA;
+  Scalar temp = 0.0;
+  for (int sp = 0; sp < 3; sp++) temp += Y0[sp];
+  for (int sp = 0; sp < 3; sp++) Y0[sp] /= temp;
+
+  NumberVector<3, Scalar> Za;
+  Za[0] = this->ZI;
+  Za[1] = this->ZE;
+  Za[2] = 0.0;
+
+  NumberVector<3, Scalar> Da;
+  Da[0] = this->D_I;
+  Da[1] = this->D_E;
+  Da[2] = this->D_A;
+
+  NumberVector<3, Scalar> mob;
+  mob[0] = this->qe / this->kB * Za[0] / _Th * Da[0];
+  mob[1] = this->qe / this->kB * Za[1] / _Te * Da[1];
+  mob[2] = 0.0;
+
+  NumberVector<3, Scalar> VB0;
+  VB0[0] = -_normal * sqrt(this->R * (_Th + this->ZI * _Te) / this->mI);
+  VB0[1] = VB0[0];
+  VB0[2] = -(Y0[0] * VB0[0] + Y0[1] * VB0[1]) / Y0[2];
+
+  NumberVector<3, NumberVector<3, Scalar>> diffMat;
+  for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) diffMat[i][j] = 0.0;
+  for (int i = 0; i < 3; i++) diffMat[i][i] = -Da[i] / X0[i];
+
+  Scalar beta = 0.0;
+  for (int sp = 0; sp < 3; sp++) beta += Za[sp] * X0[sp] * mob[sp];
+
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      diffMat[i][j] += mob[i] * Za[j] * Da[j] / beta;
+    }
+  }
+
+  // The identity tensor I
+  NumberVector<3, NumberVector<3, Scalar>> Identity = NumberVector<3, Scalar>::identity();
+  NumberVector<3, Scalar> Ones;
+  for (int i = 0; i < 3; i++) Ones[i] = 1.0;
+  NumberVector<3, NumberVector<3, Scalar>> corr = (Identity - Ones.outerproduct(Y0));
+  NumberVector<3, NumberVector<3, Scalar>> diffMat0 = diffMat;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      diffMat[i][j] = 0.0;
+      for (int k = 0; k < 3; k++) diffMat[i][j] += corr[i][k] * diffMat0[k][j];
+    }
+  }
+
+  NumberVector<3, Scalar> Xconstraint;
+  Xconstraint[0] = 1.0;
+  Xconstraint[1] = 1.0;
+  Xconstraint[2] = -2.0;
+
+  NumberVector<3, Scalar> diffReduced;
+  for (int i = 0; i < 3; i++) {
+    diffReduced[i] = 0.0;
+    for (int j = 0; j < 3; j++) diffReduced[i] += diffMat[i][j] * Xconstraint[j];
+  }
+
+  // Solve dXa by Gauss-elimiation.
+  NumberVector<3, Scalar> sol = VB0;
+  for (int i = 0; i < 3; i++) sol[i] *= Xconstraint[i] / diffReduced[i];
+  // for (int i = 0; i < 3; i++) {
+  //   for (int j = i + 1; j < 3; j++) diffMat[i][j] /= diffMat[i][i];
+  //   sol[i] /= diffMat[i][i];
+  //   diffMat[i][i] = 1.0;
+  //
+  //   for (int ii = 0; ii < 3; ii++) {
+  //     if (ii == i) continue;
+  //     for (int j = i + 1; j < 3; j++) diffMat[ii][j] -= diffMat[ii][i] * diffMat[i][j];
+  //     sol[ii] -= diffMat[ii][i] * sol[i];
+  //     diffMat[ii][i] = 0.0;
+  //   }
+  // }
+
+  for (int i = 0; i < 3; i++) dXa[i] = sol[i];
+  for (int i = 0; i < 3; i++) VB[i] = VB0[i];
+}
+
+template<typename Scalar>
+void MASA::ternary_2d_sheath<Scalar>::initialize_dXa() {
+  if (this->initialized) return;
+
+  this->dXa0.resize(3);
+  this->VB0.resize(3);
+  Scalar normal = 1.0;
+  this->compute_dXa(normal, this->XI0, this->Te0, this->Th0, this->VB0, this->dXa0);
+
+  this->dXaL.resize(3);
+  this->VBL.resize(3);
+  normal = -1.0;
+  this->compute_dXa(normal, this->XIL, this->TeL, this->ThL, this->VBL, this->dXaL);
+
+  this->initialized = true;
+  return;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_TE(inputScalar x, inputScalar y) {
+  using std::sqrt;
+  using std::log;
+
+  Scalar y0 = 0.0;
+  inputScalar n0 = this->eval_exact_n(x, y0);
+  inputScalar vTe = sqrt(8.0 * this->R * this->Te0 / this->mE / this->pi);
+  inputScalar gamma = -log(-4.0 / vTe * this->VB0[1]);
+  inputScalar qe0 = n0 * this->XI0 * this->R * this->Te0 * (gamma + 2.0) * this->VB0[1];
+  inputScalar dTe0 = (n0 * this->XI0 * this->CP_E * this->Te0 * this->VB0[1] - qe0) / this->k_E;
+
+  Scalar yL = this->Ly;
+  inputScalar nL = this->eval_exact_n(x, yL);
+  inputScalar vTeL = sqrt(8.0 * this->R * this->TeL / this->mE / this->pi);
+  inputScalar gammaL = -log(4.0 / vTeL * this->VBL[1]);
+  inputScalar qeL = nL * this->XIL * this->R * this->TeL * (gammaL + 2.0) * this->VBL[1];
+  inputScalar dTeL = (nL * this->XIL * this->CP_E * this->TeL * this->VBL[1] - qeL) / this->k_E;
+
+  inputScalar yp = y / this->Ly;
+
+  inputScalar exact_Te0 = this->Te0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
+                          this->Ly * dTe0 * (yp - 2.0 * yp * yp + yp * yp * yp) +
+                          this->TeL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
+                          this->Ly * dTeL * (yp * yp - yp * yp * yp);
+
+  return exact_Te0;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_XI(inputScalar x, inputScalar y) {
+  inputScalar yp = y / this->Ly;
+
+  inputScalar exact_XI = this->XI0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
+                         this->Ly * dXa0[0] * (yp - 2.0 * yp * yp + yp * yp * yp) +
+                         this->XIL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
+                         this->Ly * dXaL[0] * (yp * yp - yp * yp * yp);
+
+  return exact_XI;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_dThL(inputScalar x) {
+  using std::cos;
+  using std::sin;
+
+  inputScalar dThL = 2.0 * this->pi * this->kTx / this->Lx * this->dTx *
+                     cos(2.0 * this->pi * this->kTx * (x / this->Lx - this->offset_Tx));
+
+  return dThL;
+}
+
+template<typename Scalar> template<typename inputScalar>
+inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_T(inputScalar x, inputScalar y) {
+  using std::sqrt;
+  using std::log;
+
+  Scalar y0 = 0.0;
+  inputScalar n0 = this->eval_exact_n(x, y0);
+  inputScalar q0 = n0 * this->XI0 * (this->CP_I * this->Th0 + this->formEnergy_I) * this->VB0[0] +
+                   n0 * (1.0 - 2.0 * this->XI0) * this->CP_A * this->Th0 * this->VB0[2];
+  inputScalar dTh0 = q0 / this->k_heat;
+
+  inputScalar dThL = this->eval_exact_dThL(x);
+
+  inputScalar yp = y / this->Ly;
+
+  inputScalar exact_Th0 = this->Th0 * (1.0 - 3.0 * yp * yp + 2.0 * yp * yp * yp) +
+                          this->Ly * dTh0 * (yp - 2.0 * yp * yp + yp * yp * yp) +
+                          this->ThL * (3.0 * yp * yp - 2.0 * yp * yp * yp) +
+                          this->Ly * dThL * (yp * yp - yp * yp * yp);
+
+  return exact_Th0;
+}
+
 // ----------------------------------------
 //   Template Instantiation(s)
 // ----------------------------------------
@@ -1400,5 +1704,6 @@ MASA_INSTANTIATE_ALL(MASA::ternary_2d_periodic_ambipolar);
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_2t_periodic_ambipolar);
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_2t_ambipolar_wall);
 MASA_INSTANTIATE_ALL(MASA::ternary_2d_2t_ambipolar_inoutlet);
+MASA_INSTANTIATE_ALL(MASA::ternary_2d_sheath);
 
 #endif // HAVE_METAPHYSICL
