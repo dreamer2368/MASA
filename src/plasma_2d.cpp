@@ -1458,9 +1458,119 @@ int MASA::ternary_2d_sheath<Scalar>::init_var()
 template <typename Scalar>
 void MASA::ternary_2d_sheath<Scalar>::eval_q_state(Scalar x1,Scalar y1,std::vector<Scalar> &source)
 {
+  using std::cos;
+  using std::sin;
+  using std::pow;
+  using std::exp;
+
+  typedef DualNumber<Scalar, NumberVector<NDIM, Scalar> > FirstDerivType;
+  typedef DualNumber<FirstDerivType, NumberVector<NDIM, FirstDerivType> > SecondDerivType;
+  typedef SecondDerivType ADScalar;
+
+  const ADScalar x = ADScalar(x1,NumberVectorUnitVector<NDIM, 0, Scalar>::value());
+  const ADScalar y = ADScalar(y1,NumberVectorUnitVector<NDIM, 1, Scalar>::value());
+
   this->initialize_dXa();
 
-  MASA::ternary_2d_2t_ambipolar_wall<Scalar>::eval_q_state(x1, y1, source);
+  source.resize(6);
+
+  // Treat velocity as a vector
+  NumberVector<NDIM, ADScalar> U;
+  U[0] = this->eval_exact_u(x, y);
+  U[1] = this->eval_exact_v(x, y);
+
+  // ADScalar rho = this->eval_exact_rho(x, y);
+  ADScalar nTotal = this->eval_exact_n(x, y);
+  // ADScalar YE = eval_exact_YE(x, y);
+  ADScalar XI = this->eval_exact_XI(x, y);
+  ADScalar T = this->eval_exact_T(x, y);
+  ADScalar TE = this->eval_exact_TE(x, y);
+
+  ADScalar XE = XI;
+  ADScalar XA = 1.0 - XE - XI;
+
+  ADScalar nI = nTotal * XI;
+  ADScalar nE = nI;
+  ADScalar nA = nTotal - nI - nE;
+
+  ADScalar rho = nA * this->mA + nI * this->mI + nE * this->mE;
+  ADScalar YI = this->mI * nI / rho;
+  ADScalar YE = this->mE * nE / rho;
+  ADScalar YA = this->mA * nA / rho;
+
+  ADScalar pe = nE * this->R * TE;
+  ADScalar p = (nA + nI) * this->R * T + pe;
+  ADScalar Ch = this->CV_I * nI + this->CV_A * nA;
+  ADScalar Ue = this->CV_E * nE * TE;
+  ADScalar rhoE = 0.5 * rho * (U.dot(U)) + Ch * T + Ue + nI * this->formEnergy_I;
+
+  NumberVector<NDIM, ADScalar> rhoU;
+  rhoU[0] = rho * U[0];
+  rhoU[1] = rho * U[1];
+
+  source[0] = raw_value(divergence(rhoU));
+
+  NumberVector<NDIM, ADScalar> gradXA = XA.derivatives();
+  NumberVector<NDIM, ADScalar> gradXI = XI.derivatives();
+  NumberVector<NDIM, ADScalar> gradXE = XE.derivatives();
+  NumberVector<NDIM, ADScalar> V_A1 = - this->D_A / XA * gradXA;
+  NumberVector<NDIM, ADScalar> V_I2 = - this->D_I / XI * gradXI;
+  NumberVector<NDIM, ADScalar> V_E2 = - this->D_E / XE * gradXE;
+
+  ADScalar mob_I = this->qe / this->kB * this->ZI / T * this->D_I;
+  ADScalar mob_E = this->qe / this->kB * this->ZE / TE * this->D_E;
+  ADScalar mho = mob_I * nI * this->ZI + mob_E * nI * this->ZE;
+
+  NumberVector<NDIM, ADScalar> ambE = - (V_I2 * this->ZI + V_E2 * this->ZE) * nI / mho;
+  NumberVector<NDIM, ADScalar> V_I1 = V_I2 + mob_I * ambE;
+  NumberVector<NDIM, ADScalar> V_E1 = V_E2 + mob_E * ambE;
+
+  NumberVector<NDIM, ADScalar> Vc = YI * V_I1 + YE * V_E1 + YA * V_A1;
+  NumberVector<NDIM, ADScalar> V_I = V_I1 - Vc;
+  NumberVector<NDIM, ADScalar> V_E = V_E1 - Vc;
+  NumberVector<NDIM, ADScalar> V_A = V_A1 - Vc;
+
+  ADScalar kfwd = this->Af * pow(TE, this->bf) * exp(- this->Ef / this->R / TE);
+  ADScalar kC = this->Ab * pow(TE, this->bb) * exp(- this->Eb / TE);
+  ADScalar RI = kfwd * (nA * nE - nI * nE * nE / kC);
+
+  source[4] = raw_value(divergence(this->mI * nI * (U + V_I)) - this->mI * RI);
+  // source[5] = raw_value(divergence(mE * nE * (U + V_E)));
+
+  // The shear strain tensor
+  NumberVector<NDIM, typename ADScalar::derivatives_type> GradU = gradient(U);
+
+  // The identity tensor I
+  NumberVector<NDIM, NumberVector<NDIM, Scalar>> Identity = NumberVector<NDIM, Scalar>::identity();
+
+  // The shear stress tensor
+  NumberVector<NDIM, NumberVector<NDIM, ADScalar>> Tau = this->mu * (GradU + transpose(GradU))
+                                                         + (this->muB - 2./3. * this->mu)*divergence(U)*Identity;
+
+  NumberVector<NDIM, Scalar> source_rhoU = raw_value(divergence(rho*U.outerproduct(U) - Tau) + p.derivatives());
+  source[1] = source_rhoU[0];
+  source[2] = source_rhoU[1];
+
+  // Electron heat flux
+  NumberVector<NDIM, ADScalar> qe = - this->k_E * TE.derivatives()
+                                    + nE * this->CP_E * TE * V_E;
+
+  // Energy transfer by elastic collision
+  Scalar m_EA = this->mE * this->mA / (this->mE + this->mA) / (this->mE + this->mA);
+  Scalar m_EI = this->mE * this->mI / (this->mE + this->mI) / (this->mE + this->mI);
+  ADScalar Wel = - 2.0 * nE * (m_EA * this->nu_A + m_EI * this->nu_I)
+                            * 1.5 * this->R * (TE - T);
+
+  source[5] = raw_value(divergence(Ue * U + qe) + pe * divergence(U) - Wel + this->rE * RI);
+
+  // Temperature flux
+  NumberVector<NDIM, ADScalar> q = - this->k_heat * T.derivatives()
+                                   + nI * (this->CP_I * T + this->formEnergy_I) * V_I
+                                   + nA * this->CP_A * T * V_A;
+
+  source[3] = raw_value(divergence((rhoE + p) * U + q + qe - Tau.dot(U)));
+
+  return;
 }
 
 /* ------------------------------------------------
@@ -1488,10 +1598,29 @@ void MASA::ternary_2d_sheath<Scalar>::eval_exact_state(Scalar x,Scalar y,std::ve
 
   this->eval_state_from_prim(prim, state);
 
-  // for (int eq = 2; eq < 6; eq++) {
-  //   if (prim[eq] <= 0.0) exit(-1);
-  //   if ((eq == 3) && (prim[eq] > 0.5)) exit(-1);
-  // }
+  bool unphysical = false;
+  for (int eq = 2; eq < 6; eq++) {
+    if (prim[eq] <= 0.0) unphysical = true;
+    if ((eq == 3) && (prim[eq] > 0.5)) unphysical = true;
+  }
+  if (unphysical) {
+    std::cout << "VB0." << std::endl;
+    for (int sp = 0; sp < 3; sp++) std::cout << this->VB0[sp] << ",\t";
+    std::cout << std::endl;
+    std::cout << "VBL." << std::endl;
+    for (int sp = 0; sp < 3; sp++) std::cout << this->VBL[sp] << ",\t";
+    std::cout << std::endl;
+    std::cout << "dXa0." << std::endl;
+    for (int sp = 0; sp < 3; sp++) std::cout << this->dXa0[sp] << ",\t";
+    std::cout << std::endl;
+    std::cout << "dXaL." << std::endl;
+    for (int sp = 0; sp < 3; sp++) std::cout << this->dXaL[sp] << ",\t";
+    std::cout << std::endl;
+    std::cout << "prim." << std::endl;
+    for (int eq = 0; eq < 6; eq++) std::cout << prim[eq] << ",\t";
+    std::cout << std::endl;
+    exit(-1);
+  }
   return;
 }
 
@@ -1611,14 +1740,14 @@ inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_TE(inputScalar x, inputS
   using std::sqrt;
   using std::log;
 
-  Scalar y0 = 0.0;
+  inputScalar y0 = 0.0;
   inputScalar n0 = this->eval_exact_n(x, y0);
   inputScalar vTe = sqrt(8.0 * this->R * this->Te0 / this->mE / this->pi);
   inputScalar gamma = -log(-4.0 / vTe * this->VB0[1]);
   inputScalar qe0 = n0 * this->XI0 * this->R * this->Te0 * (gamma + 2.0) * this->VB0[1];
   inputScalar dTe0 = (n0 * this->XI0 * this->CP_E * this->Te0 * this->VB0[1] - qe0) / this->k_E;
 
-  Scalar yL = this->Ly;
+  inputScalar yL = this->Ly;
   inputScalar nL = this->eval_exact_n(x, yL);
   inputScalar vTeL = sqrt(8.0 * this->R * this->TeL / this->mE / this->pi);
   inputScalar gammaL = -log(4.0 / vTeL * this->VBL[1]);
@@ -1668,7 +1797,7 @@ inputScalar MASA::ternary_2d_sheath<Scalar>::eval_exact_T(inputScalar x, inputSc
   using std::sqrt;
   using std::log;
 
-  Scalar y0 = 0.0;
+  inputScalar y0 = 0.0;
   inputScalar n0 = this->eval_exact_n(x, y0);
   inputScalar q0 = n0 * this->XI0 * (this->CP_I * this->Th0 + this->formEnergy_I) * this->VB0[0] +
                    n0 * (1.0 - 2.0 * this->XI0) * this->CP_A * this->Th0 * this->VB0[2];
