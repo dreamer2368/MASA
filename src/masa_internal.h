@@ -1936,6 +1936,66 @@ namespace MASA
     void eval_exact_state  (Scalar,Scalar,std::vector<Scalar>&);
   };
 
+  template <typename Scalar>
+  class ad_cns_2d_sutherlands : public manufactured_solution<Scalar>
+  {
+    using manufactured_solution<Scalar>::pi;
+    using manufactured_solution<Scalar>::PI;
+
+  private:
+    Scalar R;
+    Scalar u_0;
+    Scalar u_x;
+    Scalar u_y;
+    Scalar v_0;
+    Scalar v_x;
+    Scalar v_y;
+    Scalar rho_0;
+    Scalar rho_x;
+    Scalar rho_y;
+    Scalar p_0;
+    Scalar p_x;
+    Scalar p_y;
+    Scalar a_px;
+    Scalar a_py;
+    Scalar a_rhox;
+    Scalar a_rhoy;
+    Scalar a_ux;
+    Scalar a_uy;
+    Scalar a_vx;
+    Scalar a_vy;
+    Scalar Gamma;
+    Scalar Amu;
+    Scalar Bmu;
+    Scalar Cmu;
+    Scalar bulkViscMult;
+    Scalar Pr;
+    Scalar L;
+
+    template<typename inputScalar>
+    inputScalar eval_rho (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_u (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_v (inputScalar, inputScalar);
+    template<typename inputScalar>
+    inputScalar eval_p (inputScalar, inputScalar);
+
+  public:
+    ad_cns_2d_sutherlands();
+    int init_var();
+
+    Scalar eval_q_rho_u (Scalar,Scalar);
+    Scalar eval_q_rho_v (Scalar,Scalar);
+    Scalar eval_q_rho_e (Scalar,Scalar);
+    Scalar eval_q_rho   (Scalar,Scalar);
+
+    Scalar eval_exact_rho (Scalar x, Scalar y) { return eval_rho(x, y); }
+    Scalar eval_exact_u (Scalar x, Scalar y) { return eval_u(x, y); }
+    Scalar eval_exact_v (Scalar x, Scalar y) { return eval_v(x, y); }
+    Scalar eval_exact_p (Scalar x, Scalar y) { return eval_p(x, y); }
+  };
+
 } // end MASA namespace
 
 

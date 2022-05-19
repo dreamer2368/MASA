@@ -152,6 +152,8 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   // sod shock tube
   anim.push_back(new sod_1d<Scalar>());
 
+  // MetaPhysicL-based solutions
+#ifdef HAVE_METAPHYSICL
   anim.push_back(new ternary_2d_periodic<Scalar>());
   anim.push_back(new ternary_2d_periodic_ambipolar<Scalar>());
   anim.push_back(new ternary_2d_2t_periodic_ambipolar<Scalar>());
@@ -159,8 +161,7 @@ int get_list_mms(std::vector<manufactured_solution<Scalar>*>& anim)
   anim.push_back(new ternary_2d_2t_ambipolar_inoutlet<Scalar>());
   anim.push_back(new ternary_2d_sheath<Scalar>());
 
-  // MetaPhysicL-based solutions
-#ifdef HAVE_METAPHYSICL
+  anim.push_back(new ad_cns_2d_sutherlands<Scalar>());
   anim.push_back(new ad_cns_2d_crossterms<Scalar>());
   anim.push_back(new ad_cns_3d_crossterms<Scalar>());
   anim.push_back(new ad_cns_3d_les<Scalar>());

@@ -13,6 +13,7 @@ cc_sources += euler_transient_2d.cpp
 cc_sources += euler_transient_3d.cpp
 cc_sources += axi_euler_transient.cpp
 cc_sources += axi_cns_transient.cpp
+cc_sources += ad_cns_2d_sutherlands.cpp
 cc_sources += ad_cns_2d_crossterms.cpp
 cc_sources += ad_cns_3d_crossterms.cpp
 cc_sources += ad_cns_3d_les.cpp
